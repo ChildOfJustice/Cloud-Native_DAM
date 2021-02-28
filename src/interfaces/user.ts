@@ -16,7 +16,7 @@ export async function decodeIdToken(idToken: string) {
         // @ts-ignore
         const response = await fetch(URL);
         if (response.status !== 200){
-            throw `request not successful`
+            throw `request to user pool is not successful`
         }
         const data = await response.json()
         const { keys } = data

@@ -14,6 +14,26 @@ import {DemoActions} from '../store/demo/types';
 import config from "../config";
 import {FetchParams, makeFetch} from "../interfaces/FetchInterface";
 
+
+import { Auth } from 'aws-amplify';
+
+async function signUp() {
+    try {
+        const { user } = await Auth.signUp({
+            username: "TESTUSER",
+            password: "uijknmmegadroN83!",
+            attributes: {
+                email: "izzvms@gmail.com"          // optional
+                // other custom attributes
+            }
+        });
+        console.log(user);
+    } catch (error) {
+        console.log('error signing up:', error);
+    }
+}
+
+
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;
     return {authToken, idToken, loading};
@@ -154,7 +174,15 @@ class SignUp extends React.Component<ReduxType, IState> {
     }
 
 
-
+    testConnection = (event: any) => {
+        // alert("TESTED")
+        //signUp().then(r => alert(r))
+        window.location.href='https://test-sardor-app.auth.eu-central-1.amazoncognito.com/login?response_type=code&client_id=5600mpcr9n4m5h9ip07nh0pfq3&redirect_uri=https://dev.d227kp0crpkj1g.amplifyapp.com/private/area/';
+        // fetch("https://test-sardor-app.auth.eu-central-1.amazoncognito.com/login?response_type=code&client_id=5600mpcr9n4m5h9ip07nh0pfq3&redirect_uri=https://dev.d227kp0crpkj1g.amplifyapp.com/").then(r => {
+        //     alert(r)
+        //     console.log(r)
+        // })
+    }
     signUp = (event: any) => {
         event.preventDefault()
 
@@ -234,6 +262,7 @@ class SignUp extends React.Component<ReduxType, IState> {
                     </Form.Group>
 
                     <Button onClick={this.signUp} variant="primary" type="submit">Sign Up</Button>
+                    <Button onClick={this.testConnection} variant="primary" type="submit">Try ME</Button>
                 </Form>}
         </div>
     );
@@ -257,6 +286,7 @@ class SignUp extends React.Component<ReduxType, IState> {
                 </Form.Group>
 
                 <Button onClick={this.signUp} variant="primary" type="submit">Sign Up</Button>
+
             </Form>
         )
         const verifyPagePart = (

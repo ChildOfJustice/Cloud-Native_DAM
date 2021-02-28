@@ -23,12 +23,6 @@ makeFetch<Cluster[]>(fetchParams).then(jsonRes => {
 }).catch(error => alert("ERROR: " + error))
 */
 
-
-export interface FetchResponse {
-    data: any,
-    success: boolean
-
-}
 export interface FetchParams {
     url: string,
     authToken: string,
@@ -39,11 +33,9 @@ export interface FetchParams {
     actionDescription: string
 }
 
-export async function makeFetch<T>(
-    fetchParams: FetchParams
-): Promise<T> {
+export async function makeFetch<T>(fetchParams: FetchParams): Promise<T> {
 
-    if(fetchParams.method == "GET"){
+    if(fetchParams.method === "GET"){
         try {
             const response = await fetch(fetchParams.url, {
                 method: 'GET',
@@ -76,7 +68,7 @@ export async function makeFetch<T>(
             });
         }
     }
-    else if(fetchParams.method == "POST"){
+    else if(fetchParams.method === "POST"){
         try {
             const response = await fetch(fetchParams.url, {
                 method: 'POST',
@@ -120,7 +112,7 @@ export async function makeFetch<T>(
             });
         }
     }
-    else if(fetchParams.method == "DELETE"){
+    else if(fetchParams.method === "DELETE"){
         try {
             const response = await fetch(fetchParams.url, {
                 method: 'DELETE',

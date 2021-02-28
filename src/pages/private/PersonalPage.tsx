@@ -66,16 +66,16 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
     constructor(props: ReduxType) {
         super(props);
-
+        alert(props)
     }
 
     async componentDidMount() {
-        await this.props.loadStore()
+        //await this.props.loadStore()
+        // await decodeIdToken(this.props.idToken).then(userid => this.setState({userId: userid}))
+        // await this.getAllUserClusters()
+        // await this.getUserRole()
+        // await this.getUsedStorageSize()
 
-        await decodeIdToken(this.props.idToken).then(userid => this.setState({userId: userid}))
-        await this.getAllUserClusters()
-        await this.getUserRole()
-        await this.getUsedStorageSize()
     }
 
     handleTableClick = () => {
@@ -405,6 +405,17 @@ class PersonalPage extends React.Component<ReduxType, IState> {
     //eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     render() {
 
+        const PersonalPage1 = (
+
+            <div>
+                {this.props}
+            </div>
+        )
+        return (
+            PersonalPage1
+        )
+
+        //!!
         var counter = 0
 
         const PersonalPage = (
