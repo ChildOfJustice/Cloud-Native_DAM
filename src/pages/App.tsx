@@ -23,25 +23,25 @@ Amplify.configure({
         region: 'eu-central-1',
 
         // OPTIONAL - Amazon Cognito User Pool ID
-        userPoolId: 'eu-central-1_fEls7aINQ',
+        //userPoolId: 'eu-central-1_fEls7aINQ',
 
         // OPTIONAL - Amazon Cognito Web Client ID (26-char alphanumeric string)
-        userPoolWebClientId: '5600mpcr9n4m5h9ip07nh0pfq3',
+        //userPoolWebClientId: '5600mpcr9n4m5h9ip07nh0pfq3',
 
         // OPTIONAL - Hosted UI configuration
-        oauth: {
-            domain: 'https://test-sardor-app.auth.eu-central-1.amazoncognito.com',
-            scope: ['phone', 'email', 'profile', 'openid', 'aws.cognito.signin.user.admin'],
-            redirectSignIn: 'https://dev.d227kp0crpkj1g.amplifyapp.com/',
-            redirectSignOut: 'https://dev.d227kp0crpkj1g.amplifyapp.com/',
-            responseType: 'code' // or 'token', note that REFRESH token will only be generated when the responseType is code
-        }
+        // oauth: {
+        //     domain: 'https://test-sardor-app.auth.eu-central-1.amazoncognito.com',
+        //     scope: ['phone', 'email', 'profile', 'openid', 'aws.cognito.signin.user.admin'],
+        //     redirectSignIn: 'https://dev.d227kp0crpkj1g.amplifyapp.com/',
+        //     redirectSignOut: 'https://dev.d227kp0crpkj1g.amplifyapp.com/',
+        //     responseType: 'code' // or 'token', note that REFRESH token will only be generated when the responseType is code
+        // }
     },
     API: {
         endpoints: [
             {
                 name: "MyBlogPostAPI",
-                endpoint: "https://shir32cv9i.execute-api.eu-central-1.amazonaws.com"
+                endpoint: "https://vadnfei3sh.execute-api.eu-central-1.amazonaws.com"
             }
         ]
     }
