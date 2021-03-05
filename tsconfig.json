@@ -4,6 +4,7 @@
     "strict": true,
     "baseUrl": "./",
     "outDir": "build",
+    "sourceMap": true,
     "removeComments": true,
     "experimentalDecorators": true,
     "target": "es6",
@@ -31,7 +32,7 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": false
   },
   "include": [
     "./src/**/*.ts"
