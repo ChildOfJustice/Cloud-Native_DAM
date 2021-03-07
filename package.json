@@ -36,9 +36,7 @@
     "start": "react-scripts start",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "start2": "webpack && webpack-dev-server --mode development",
-    "build3": "rm -rf ./build/* && tsc --build tsconfig.json && webpack --config webpack.config.js",
-    "start3": "node build/src/index.js"
+    "start2": "webpack && webpack-dev-server --mode development"
   },
   "keywords": [],
   "author": "Yuldashev Andrey",

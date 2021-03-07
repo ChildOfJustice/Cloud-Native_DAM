@@ -50,22 +50,66 @@ Resources:
       Description: Example HTTP API
       Name: api-with-auth
       ProtocolType: HTTP
-      Target: !GetAtt MyLambdaFunction.Arn
+      # Target: !GetAtt MyLambdaFunction.Arn
       CorsConfiguration:
         AllowHeaders: 
           - '*'
         AllowMethods: 
-          - 'GET'
+          - '*'
         AllowOrigins: 
-          - 'https://dev1400.dr0pm97gwkd.amplifyapp.com'
+          - !Ref CognitoCallBackUrl
 
-  DefaultRouteOverrides:
-    Type: AWS::ApiGatewayV2::ApiGatewayManagedOverrides
+  TestIntegration:
+    Type: AWS::ApiGatewayV2::Integration
     Properties: 
       ApiId: !Ref MyAPI
-      Route: 
-        AuthorizationType: JWT
-        AuthorizerId: !Ref JWTAuthorizer
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MyLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+
+
+  TestPOSTRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: 
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'test-op'
+      RouteKey: 'POST /test'
+      Target: !Join 
+        - /
+        - - integrations
+          - !Ref TestIntegration
+
+
+  TestDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    Properties: 
+      ApiId: !Ref MyAPI
+      Description: 'First deployment'
+      StageName: 'dev'
+    DependsOn: 
+      - TestStage
+      - TestPOSTRoute
+    
+
+  TestStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties: 
+      ApiId: !Ref MyAPI
+      AutoDeploy: false
+      # DeploymentId: !Ref TestDeployment
+      Description: 'test stage for dev'
+      StageName: 'dev'
+
+  # DefaultRouteOverrides:
+  #   Type: AWS::ApiGatewayV2::ApiGatewayManagedOverrides
+  #   Properties: 
+  #     ApiId: !Ref MyAPI
+  #     Route: 
+  #       AuthorizationType: JWT
+  #       AuthorizerId: !Ref JWTAuthorizer
 
   JWTAuthorizer:
     Type: AWS::ApiGatewayV2::Authorizer
@@ -103,7 +147,7 @@ Resources:
       FunctionName: !Ref MyLambdaFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/$default/$default
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/$default/test
   FunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -159,14 +203,11 @@ Resources:
       UserPoolId: !Ref UserPool
       SupportedIdentityProviders:
         - COGNITO 
-  HostedUI:
-    Type: AWS::Cognito::UserPoolDomain
-    Properties: 
-      Domain: !Join
-        - '-'
-        - - !Ref MyAPI
-          - !Ref AppClient
-      UserPoolId: !Ref UserPool
-Outputs:
-  SignupURL:
-    Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}
+  # HostedUI:
+  #   Type: AWS::Cognito::UserPoolDomain
+  #   Properties: 
+  #     Domain: !Ref CognitoDomain
+  #     UserPoolId: !Ref UserPool
+# Outputs:
+  # SignupURL:
+  #   Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}
