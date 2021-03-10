@@ -203,11 +203,11 @@ Resources:
       UserPoolId: !Ref UserPool
       SupportedIdentityProviders:
         - COGNITO 
-  # HostedUI:
-  #   Type: AWS::Cognito::UserPoolDomain
-  #   Properties: 
-  #     Domain: !Ref CognitoDomain
-  #     UserPoolId: !Ref UserPool
-# Outputs:
-  # SignupURL:
-  #   Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}
+   HostedUI:
+     Type: AWS::Cognito::UserPoolDomain
+     Properties:
+       Domain: !Ref CognitoDomain
+       UserPoolId: !Ref UserPool
+ Outputs:
+   SignupURL:
+     Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}
