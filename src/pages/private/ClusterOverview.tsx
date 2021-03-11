@@ -124,8 +124,9 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/file_cluster/delete?fileId='+fileId+"&clusterId="+clusterId_,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'DELETE',
             body: null,
 
@@ -138,8 +139,9 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
             const fetchParams: FetchParams = {
                 url: '/files/metadata/delete?id='+fileId,
-                authToken: authToken,
-                idToken: idToken,
+                //authToken: authToken,
+                //idToken: idToken,
+                token: "",
                 method: 'DELETE',
                 body: null,
 
@@ -262,8 +264,9 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/files/metadata/findAll?clusterId='+clusterId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -282,8 +285,9 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/cousers/findAll?clusterId='+clusterId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -308,8 +312,9 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         const fetchParams: FetchParams = {
             // @ts-ignore
             url: '/clusters/?clusterId='+this.props.match.params.clusterId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -328,8 +333,9 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                 const fetchParams: FetchParams = {
                     // @ts-ignore
                     url: '/cousers/getPermissions?userId=' + this.state.userId + '&clusterId=' + this.props.match.params.clusterId,
-                    authToken: authToken,
-                    idToken: idToken,
+                    //authToken: authToken,
+                    //idToken: idToken,
+                    token: "",
                     method: 'GET',
                     body: null,
 
@@ -362,8 +368,9 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/cousers/create',
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'POST',
             body: coUserData,
 
@@ -389,8 +396,9 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/cousers/delete?clusterId='+coUserData.clusterId+"&coUserId="+couserId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'DELETE',
             body: null,
 

@@ -78,8 +78,9 @@ class UploadFile extends React.Component<ReduxType, IState> {
         let fetchParams: FetchParams = {
             // @ts-ignore
             url: '/clusters?clusterId='+this.props.match.params.clusterId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -96,8 +97,9 @@ class UploadFile extends React.Component<ReduxType, IState> {
 
         fetchParams = {
             url: '/files/metadata/calcUsedSize?ownerUserId='+clusterOwnerUserId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -223,8 +225,9 @@ class UploadFile extends React.Component<ReduxType, IState> {
 
                 const fetchParams: FetchParams = {
                     url: '/files/metadata/create',
-                    authToken: authToken,
-                    idToken: idToken,
+                    //authToken: authToken,
+                    //idToken: idToken,
+                    token: "",
                     method: 'POST',
                     body: metadata,
 

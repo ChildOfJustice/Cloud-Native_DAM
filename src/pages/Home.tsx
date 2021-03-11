@@ -5,21 +5,6 @@ import * as React from "react";
 import {API} from "aws-amplify";
 import {FetchParams, makeFetch} from "../interfaces/FetchInterface";
 
-function getData(token: string) {
-    const apiName = "MyBlogPostAPI";
-    const path = "/$default/$default";
-    const myInit = {
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: token
-        }
-    };
-    return API.get(apiName, path, myInit);
-}
-
-
-
 interface MyViewProperties {
     params: string;
 }
@@ -52,19 +37,7 @@ class Home extends React.Component<MyViewProperties, MyViewState> {
         //     }
         // }).then( r => console.log(r))
         //
-        const fetchParams: FetchParams = {
-            url: 'https://hgc931nd9g.execute-api.eu-central-1.amazonaws.com/?' + id_token_param,
-            authToken: "",
-            idToken: "",
-            method: 'GET',
-            body: '',
 
-            actionDescription: "test request to api gateway"
-        }
-
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-        }).catch(error => alert("ERROR: " + error))
         // getData(id_token).then(r => {
         //     alert(r)
         //     console.log(r)
@@ -77,8 +50,6 @@ class Home extends React.Component<MyViewProperties, MyViewState> {
                 </p>
                 <p>
                     Feel free to test our service! ;p
-                    {/*YOUR TOKEN IS {getData(token).then(r => alert(r))}*/}
-                    OR {}
 
                 </p>
                 <p>
@@ -88,9 +59,9 @@ class Home extends React.Component<MyViewProperties, MyViewState> {
                     <LinkContainer to="/signUp">
                         <Button variant="primary">Sign Up</Button>
                     </LinkContainer>
-                    {/*<LinkContainer to="/test">*/}
-                    {/*    <Button variant="primary">Test</Button>*/}
-                    {/*</LinkContainer>*/}
+                    <LinkContainer to="/test">
+                        <Button variant="primary">Test</Button>
+                    </LinkContainer>
                 </p>
             </Jumbotron>
         );

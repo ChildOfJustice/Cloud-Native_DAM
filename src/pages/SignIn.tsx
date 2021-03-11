@@ -72,8 +72,9 @@ class SignIn extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/auth/signIn',
-            authToken: "",
-            idToken: "",
+            //authToken: "",
+            //idToken: "",
+            token: "",
             method: 'POST',
             body: userData,
 

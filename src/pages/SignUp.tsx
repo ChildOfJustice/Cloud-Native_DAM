@@ -96,8 +96,9 @@ class SignUp extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/auth/verify',
-            authToken: "",
-            idToken: "",
+            //authToken: "",
+            //idToken: "",
+            token: "",
             method: 'POST',
             body: userData,
 
@@ -123,8 +124,9 @@ class SignUp extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/auth/signIn',
-            authToken: "",
-            idToken: "",
+            //authToken: "",
+            //idToken: "",
+            token: "",
             method: 'POST',
             body: userData,
 
@@ -156,8 +158,9 @@ class SignUp extends React.Component<ReduxType, IState> {
 
             const fetchParams: FetchParams = {
                 url: '/users/create',
-                authToken: authToken,
-                idToken: idToken,
+                //authToken: authToken,
+                //idToken: idToken,
+                token: "",
                 method: 'POST',
                 body: userData2,
 
@@ -197,8 +200,9 @@ class SignUp extends React.Component<ReduxType, IState> {
         this.setState({userNameForDatabase: this.state.userName})
         const fetchParams: FetchParams = {
             url: '/auth/signUp',
-            authToken: "",
-            idToken: "",
+            //authToken: "",
+            //idToken: "",
+            token: "",
             method: 'POST',
             body: userData,
 

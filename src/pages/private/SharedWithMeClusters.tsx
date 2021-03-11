@@ -62,8 +62,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         let fetchParams: FetchParams = {
             url: '/users/find?userId=' + this.state.userId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -86,8 +87,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         let fetchParams: FetchParams = {
             url: '/cousers/findAll?userId=' + this.state.userId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -109,8 +111,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
             const fetchParams: FetchParams = {
                 url: '/clusters/findAll',
-                authToken: authToken,
-                idToken: idToken,
+                //authToken: authToken,
+                //idToken: idToken,
+                token: "",
                 method: 'POST',
                 body: data,
 

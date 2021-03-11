@@ -94,8 +94,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/clusters/create',
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'POST',
             body: clusterData,
 
@@ -139,8 +140,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/file_cluster/delete?fileId=' + fileId + "&clusterId=" + clusterId_,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'DELETE',
             body: null,
 
@@ -154,8 +156,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
             const fetchParams: FetchParams = {
                 url: '/files/metadata/delete?id=' + fileId,
-                authToken: authToken,
-                idToken: idToken,
+                //authToken: authToken,
+                //idToken: idToken,
+                token: "",
                 method: 'DELETE',
                 body: null,
 
@@ -180,8 +183,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         let fetchParams: FetchParams = {
             url: '/files/metadata/findAll?clusterId=' + clusterId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -208,8 +212,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         //delete cousers associated with this cluster
         fetchParams = {
             url: '/cousers/deleteAllAssociatedWithCluster?clusterId=' + clusterId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'DELETE',
             body: null,
 
@@ -224,8 +229,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         //delete cluster
         fetchParams = {
             url: '/clusters/delete?clusterId=' + clusterId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'DELETE',
             body: null,
 
@@ -268,8 +274,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         let fetchParams: FetchParams = {
             url: '/users/delete?cognitoUserId=' + this.state.userId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'DELETE',
             body: null,
 
@@ -292,8 +299,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         let fetchParams: FetchParams = {
             url: '/users/find?userId=' + this.state.userId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -318,8 +326,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         let fetchParams: FetchParams = {
             url: '/clusters/findAll?ownerUserId=' + this.state.userId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -338,8 +347,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         let fetchParams: FetchParams = {
             url: '/files/metadata/calcUsedSize?ownerUserId=' + this.state.userId,
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'GET',
             body: null,
 
@@ -366,8 +376,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         const fetchParams: FetchParams = {
             url: '/protected/adminQuery',
-            authToken: authToken,
-            idToken: idToken,
+            //authToken: authToken,
+            //idToken: idToken,
+            token: "",
             method: 'POST',
             body: data,
 
