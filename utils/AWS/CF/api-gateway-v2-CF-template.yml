@@ -57,7 +57,7 @@ Resources:
         AllowMethods: 
           - 'GET'
         AllowOrigins: 
-          - 'https://dev1400.dr0pm97gwkd.amplifyapp.com'
+          - !Ref CognitoCallBackUrl
 
   DefaultRouteOverrides:
     Type: AWS::ApiGatewayV2::ApiGatewayManagedOverrides

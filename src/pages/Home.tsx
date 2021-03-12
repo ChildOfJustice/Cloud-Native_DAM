@@ -53,7 +53,7 @@ class Home extends React.Component<MyViewProperties, MyViewState> {
         // }).then( r => console.log(r))
         //
         const fetchParams: FetchParams = {
-            url: 'https://hgc931nd9g.execute-api.eu-central-1.amazonaws.com/?' + id_token_param,
+            url: 'https://z0yryrbbgl.execute-api.eu-central-1.amazonaws.com/?' + id_token_param,
             authToken: "",
             idToken: "",
             method: 'GET',
