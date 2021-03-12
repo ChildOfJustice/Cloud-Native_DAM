@@ -4,6 +4,6 @@ aws cloudformation deploy \
  	--stack-name TestStack \
  	--capabilities CAPABILITY_NAMED_IAM \
  	--parameter-overrides \
- 	CognitoCallBackUrl=https://dev.dp83nzni84jnn.amplifyapp.com/ \
- 	CognitoLogOutUrl=https://dev.dp83nzni84jnn.amplifyapp.com/ \
+ 	CognitoCallBackUrl=https://dev.dp9ezmtod6myb.amplifyapp.com \
+ 	CognitoLogOutUrl=https://dev.dp9ezmtod6myb.amplifyapp.com \
  	--region  eu-central-1

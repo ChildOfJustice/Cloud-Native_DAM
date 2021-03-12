@@ -74,7 +74,7 @@ Resources:
       AuthorizationType: JWT
       AuthorizerId: !Ref JWTAuthorizer
       OperationName: 'test-op'
-      RouteKey: 'POST /test'
+      RouteKey: 'POST /test/{proxy+}'
       Target: !Join
         - /
         - - integrations
@@ -85,8 +85,8 @@ Resources:
     Type: AWS::ApiGatewayV2::Deployment
     Properties:
       ApiId: !Ref MyAPI
-      Description: 'First deployment'
-      StageName: 'dev'
+      Description: 'Default deployment'
+      StageName: '$default'
     DependsOn:
       - TestStage
       - TestPOSTRoute
@@ -98,8 +98,8 @@ Resources:
       ApiId: !Ref MyAPI
       AutoDeploy: false
       # DeploymentId: !Ref TestDeployment
-      Description: 'test stage for dev'
-      StageName: 'dev'
+      Description: 'default stage'
+      StageName: '$default'
 
   # DefaultRouteOverrides:
   #   Type: AWS::ApiGatewayV2::ApiGatewayManagedOverrides
@@ -133,7 +133,7 @@ Resources:
         ZipFile: |
           import json
 
-          def lambda_handler(event, context):
+          def handler(event, context):
               print(event)
 
               response_body = {
@@ -154,7 +154,7 @@ Resources:
       FunctionName: !Ref MyLambdaFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/$default/test
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
   FunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:

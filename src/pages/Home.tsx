@@ -27,7 +27,7 @@ class Home extends React.Component<MyViewProperties, MyViewState> {
         //var token = id_token_param.substring(id_token_param.indexOf('#')+1);
         //alert(token); str.split('+')[0]
         const fetchParams: FetchParams = {
-            url: 'https://r6d3hd5px9.execute-api.eu-central-1.amazonaws.com/dev/test',
+            url: 'https://o7ygr7or42.execute-api.eu-central-1.amazonaws.com/test',
             token: id_token_param,
             method: 'POST',
             body: '',
