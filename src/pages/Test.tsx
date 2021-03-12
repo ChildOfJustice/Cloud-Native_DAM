@@ -42,11 +42,11 @@ export default class Test extends React.Component {
 
     testCode = (event: any) => {
         const fetchParams: FetchParams = {
-            url: 'https://hgc931nd9g.execute-api.eu-central-1.amazonaws.com',
+            url: 'https://r6d3hd5px9.execute-api.eu-central-1.amazonaws.com/dev/test',
             //authToken: "",
             //idToken: "",
             token: "",
-            method: 'GET',
+            method: 'POST',
             body: '',
 
             actionDescription: "test request to api gateway"

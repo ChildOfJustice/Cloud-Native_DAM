@@ -26,7 +26,18 @@ class Home extends React.Component<MyViewProperties, MyViewState> {
         var id_token_param = window.location.hash.slice(1);
         //var token = id_token_param.substring(id_token_param.indexOf('#')+1);
         //alert(token); str.split('+')[0]
+        const fetchParams: FetchParams = {
+            url: 'https://r6d3hd5px9.execute-api.eu-central-1.amazonaws.com/dev/test',
+            token: id_token_param,
+            method: 'POST',
+            body: '',
 
+            actionDescription: "test request to api gateway"
+        }
+
+        makeFetch<any>(fetchParams).then(jsonRes => {
+            console.log(jsonRes)
+        }).catch(error => alert("ERROR: " + error))
 
         // fetch(, {
         //     method: 'GET',

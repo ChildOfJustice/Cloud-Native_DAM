@@ -4,8 +4,6 @@ Description: |
   and a Cognito app client as the audience for the authorizer. The outputs include a URL for a Cognito hosted UI where clients can 
   sign up and sign in to receive a JWT. After a client signs in, the client is redirected to your HTTP API with an access token 
   in the URL. To invoke the API with the access token, change the '#' in the URL to a '?' to use the token as a query string parameter.
-
-
 Parameters:
   CognitoCallBackUrl:
     Type: String
@@ -18,50 +16,50 @@ Parameters:
     Default: amplifytestappdomain
 
 Resources:
-#----------------------------------Amplify-----------------------------------
-# Type: AWS::Amplify::App
-# Properties: 
-#   Name: amplifytestapp
-#   OauthToken: String
-#   Repository: String
-#   Tags: 
-#     - Tag
-# Type: AWS::Amplify::Branch
-# Properties: 
-#   AppId: String
-#   BasicAuthConfig: 
-#     BasicAuthConfig
-#   BranchName: String
-#   BuildSpec: String
-#   Description: String
-#   EnableAutoBuild: Boolean
-#   EnablePerformanceMode: Boolean
-#   EnablePullRequestPreview: Boolean
-#   EnvironmentVariables: 
-#     - EnvironmentVariable
-#   PullRequestEnvironmentName: String
-#   Stage: String
-#   Tags: 
-#     - Tag
-#----------------------------------API-----------------------------------
+  #----------------------------------Amplify-----------------------------------
+  # Type: AWS::Amplify::App
+  # Properties:
+  #   Name: amplifytestapp
+  #   OauthToken: String
+  #   Repository: String
+  #   Tags:
+  #     - Tag
+  # Type: AWS::Amplify::Branch
+  # Properties:
+  #   AppId: String
+  #   BasicAuthConfig:
+  #     BasicAuthConfig
+  #   BranchName: String
+  #   BuildSpec: String
+  #   Description: String
+  #   EnableAutoBuild: Boolean
+  #   EnablePerformanceMode: Boolean
+  #   EnablePullRequestPreview: Boolean
+  #   EnvironmentVariables:
+  #     - EnvironmentVariable
+  #   PullRequestEnvironmentName: String
+  #   Stage: String
+  #   Tags:
+  #     - Tag
+  #----------------------------------API-----------------------------------
   MyAPI:
     Type: AWS::ApiGatewayV2::Api
-    Properties: 
+    Properties:
       Description: Example HTTP API
       Name: api-with-auth
       ProtocolType: HTTP
       # Target: !GetAtt MyLambdaFunction.Arn
       CorsConfiguration:
-        AllowHeaders: 
+        AllowHeaders:
           - '*'
-        AllowMethods: 
+        AllowMethods:
           - '*'
-        AllowOrigins: 
+        AllowOrigins:
           - !Ref CognitoCallBackUrl
 
   TestIntegration:
     Type: AWS::ApiGatewayV2::Integration
-    Properties: 
+    Properties:
       ApiId: !Ref MyAPI
       IntegrationMethod: 'POST'
       IntegrationType: 'AWS_PROXY'
@@ -71,13 +69,13 @@ Resources:
 
   TestPOSTRoute:
     Type: AWS::ApiGatewayV2::Route
-    Properties: 
+    Properties:
       ApiId: !Ref MyAPI
       AuthorizationType: JWT
       AuthorizerId: !Ref JWTAuthorizer
       OperationName: 'test-op'
       RouteKey: 'POST /test'
-      Target: !Join 
+      Target: !Join
         - /
         - - integrations
           - !Ref TestIntegration
@@ -85,18 +83,18 @@ Resources:
 
   TestDeployment:
     Type: AWS::ApiGatewayV2::Deployment
-    Properties: 
+    Properties:
       ApiId: !Ref MyAPI
       Description: 'First deployment'
       StageName: 'dev'
-    DependsOn: 
+    DependsOn:
       - TestStage
       - TestPOSTRoute
-    
+
 
   TestStage:
     Type: AWS::ApiGatewayV2::Stage
-    Properties: 
+    Properties:
       ApiId: !Ref MyAPI
       AutoDeploy: false
       # DeploymentId: !Ref TestDeployment
@@ -105,41 +103,50 @@ Resources:
 
   # DefaultRouteOverrides:
   #   Type: AWS::ApiGatewayV2::ApiGatewayManagedOverrides
-  #   Properties: 
+  #   Properties:
   #     ApiId: !Ref MyAPI
-  #     Route: 
+  #     Route:
   #       AuthorizationType: JWT
   #       AuthorizerId: !Ref JWTAuthorizer
 
   JWTAuthorizer:
     Type: AWS::ApiGatewayV2::Authorizer
-    Properties: 
+    Properties:
       ApiId: !Ref MyAPI
       AuthorizerType: JWT
-      IdentitySource: 
+      IdentitySource:
         - '$request.querystring.access_token'
-      JwtConfiguration: 
-        Audience: 
-        - !Ref AppClient
+      JwtConfiguration:
+        Audience:
+          - !Ref AppClient
         Issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
       Name: test-jwt-authorizer
 
-#----------------------------------BACKEND-----------------------------------
+  #----------------------------------BACKEND-----------------------------------
   MyLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Runtime: nodejs12.x
+      Runtime: python3.8
       Role: !GetAtt FunctionExecutionRole.Arn
       Handler: index.handler
       Code:
         ZipFile: |
-          exports.handler = async (event) => {
-              const response = {
-                  statusCode: 200,
-                  body: JSON.stringify('Hello from the ' + event.routeKey + ' route!'),
-              };
+          import json
+
+          def lambda_handler(event, context):
+              print(event)
+
+              response_body = {
+                  'raw path': event.get('rawPath'),
+                  'rawQueryString': event.get('rawQueryString'),
+                  'queryStringParameters': event.get('queryStringParameters')
+              }
+
+              response = {
+                  'statusCode': 200,
+                  'body': json.dumps(response_body),
+              }
               return response;
-          };
   #--------------------------------Roles-----------------------------------
   APIInvokeLambdaPermission:
     Type: AWS::Lambda::Permission
@@ -157,12 +164,12 @@ Resources:
           - Effect: Allow
             Principal:
               Service:
-              - lambda.amazonaws.com
+                - lambda.amazonaws.com
             Action:
               - 'sts:AssumeRole'
-      ManagedPolicyArns: 
+      ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-#--------------------------------Cognito---------------------------------
+  #--------------------------------Cognito---------------------------------
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -181,9 +188,9 @@ Resources:
   AppClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      AllowedOAuthFlows: 
+      AllowedOAuthFlows:
         - implicit
-      AllowedOAuthScopes: 
+      AllowedOAuthScopes:
         - aws.cognito.signin.user.admin
         - email
         - openid
@@ -202,12 +209,12 @@ Resources:
         - ALLOW_REFRESH_TOKEN_AUTH
       UserPoolId: !Ref UserPool
       SupportedIdentityProviders:
-        - COGNITO 
-   HostedUI:
-     Type: AWS::Cognito::UserPoolDomain
-     Properties:
-       Domain: !Ref CognitoDomain
-       UserPoolId: !Ref UserPool
- Outputs:
-   SignupURL:
-     Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}
+        - COGNITO
+  HostedUI:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref CognitoDomain
+      UserPoolId: !Ref UserPool
+Outputs:
+  SignupURL:
+    Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}
