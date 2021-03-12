@@ -92,18 +92,27 @@ Resources:
   MyLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Runtime: nodejs12.x
+      Runtime: python3.8
       Role: !GetAtt FunctionExecutionRole.Arn
       Handler: index.handler
       Code:
         ZipFile: |
-          exports.handler = async (event) => {
-              const response = {
-                  statusCode: 200,
-                  body: JSON.stringify('Hello from the ' + event.routeKey + ' route!'),
-              };
+          import json
+
+          def lambda_handler(event, context):
+              print(event)
+
+              response_body = {
+                  'raw path': event.get('rawPath'),
+                  'rawQueryString': event.get('rawQueryString'),
+                  'queryStringParameters': event.get('queryStringParameters')
+              }
+
+              response = {
+                  'statusCode': 200,
+                  'body': json.dumps(response_body),
+              }
               return response;
-          };
   #--------------------------------Roles-----------------------------------
   APIInvokeLambdaPermission:
     Type: AWS::Lambda::Permission

@@ -34,46 +34,47 @@ export interface FetchParams {
     actionDescription: string
 }
 
-function processData<T>(res: any, actionDescription: string){
-    res.json().then((jsonResponse: any) => {
-        if (res.ok)
-            console.log("Successfully made request: " + actionDescription)
-        else {
-            // @ts-ignore
-            return new Promise(function(resolve, reject) {
-                console.log("Error for fetch: " + actionDescription + ": " + jsonResponse.message)
-                reject("Error for fetch: " + actionDescription + ": " + jsonResponse.message)
-            });
-        }
-        return new Promise<T>(function(resolve, reject) {
+async function processData<T>(res: any, actionDescription: string){
+    let jsonResponse = await res.json()
+    if (res.ok){
+        console.log("Successfully made request: " + actionDescription)
+        console.log(jsonResponse) // <--------------!!!!!!!!!!
+        return new Promise<T>(function (resolve, reject) {
             resolve(jsonResponse)
         })
-    })
+    }
+    else {
+        // @ts-ignore
+        return new Promise(function(resolve, reject) {
+            console.log("Error for fetch: " + actionDescription + ": " + jsonResponse.message)
+            reject("Error for fetch: " + actionDescription + ": " + jsonResponse.message)
+        });
+    }
 }
 
 // @ts-ignore
 export async function makeFetch<T>(fetchParams: FetchParams): Promise<T> {
 
     if(fetchParams.method === "GET"){
-        await fetch(fetchParams.url + "/?" + fetchParams.token, {
+        let res = await fetch(fetchParams.url + "/?" + fetchParams.token, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 //'Auth': fetchParams.authToken,
                 //'Identity': fetchParams.idToken
             }
-        }).then(res => {
-            return processData<T>(res, fetchParams.actionDescription)
         }).catch(error => {
             return new Promise(function (resolve, reject) {
                 console.log("Error for fetch: " + fetchParams.actionDescription + ": " + error)
                 reject("Error for fetch: " + fetchParams.actionDescription + ": " + error)
             });
         })
+        // @ts-ignore
+        return processData<T>(res, fetchParams.actionDescription)
 
     }
     else if(fetchParams.method === "POST"){
-        await fetch(fetchParams.url + "/?" + fetchParams.token, {
+        let res = await fetch(fetchParams.url + "/?" + fetchParams.token, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -81,14 +82,14 @@ export async function makeFetch<T>(fetchParams: FetchParams): Promise<T> {
                 //'Identity': fetchParams.idToken
             },
             body: JSON.stringify(fetchParams.body)
-        }).then(res => {
-            return processData<T>(res, fetchParams.actionDescription)
         }).catch(error => {
             return new Promise(function (resolve, reject) {
                 console.log("Error for fetch: " + fetchParams.actionDescription + ": " + error)
                 reject("Error for fetch: " + fetchParams.actionDescription + ": " + error)
             });
         })
+        // @ts-ignore
+        return processData<T>(res, fetchParams.actionDescription)
     }
     else if(fetchParams.method === "DELETE"){
         await fetch(fetchParams.url + "/?" + fetchParams.token, {
