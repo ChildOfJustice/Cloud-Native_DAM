@@ -38,7 +38,7 @@ async function processData<T>(res: any, actionDescription: string){
     let jsonResponse = await res.json()
     if (res.ok){
         console.log("Successfully made request: " + actionDescription)
-        console.log(jsonResponse) // <--------------!!!!!!!!!!
+        //console.log(jsonResponse) // <--------------!!!!!!!!!!
         return new Promise<T>(function (resolve, reject) {
             resolve(jsonResponse)
         })
@@ -56,11 +56,11 @@ async function processData<T>(res: any, actionDescription: string){
 export async function makeFetch<T>(fetchParams: FetchParams): Promise<T> {
 
     if(fetchParams.method === "GET"){
-        let res = await fetch(fetchParams.url + "/?" + fetchParams.token, {
+        let res = await fetch(fetchParams.url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                //'Auth': fetchParams.authToken,
+                'Authorization': fetchParams.token,
                 //'Identity': fetchParams.idToken
             }
         }).catch(error => {
@@ -74,11 +74,11 @@ export async function makeFetch<T>(fetchParams: FetchParams): Promise<T> {
 
     }
     else if(fetchParams.method === "POST"){
-        let res = await fetch(fetchParams.url + "/?" + fetchParams.token, {
+        let res = await fetch(fetchParams.url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                //'Auth': fetchParams.authToken,
+                'Authorization': fetchParams.token,
                 //'Identity': fetchParams.idToken
             },
             body: JSON.stringify(fetchParams.body)

@@ -74,7 +74,7 @@ Resources:
       AuthorizationType: JWT
       AuthorizerId: !Ref JWTAuthorizer
       OperationName: 'test-op'
-      RouteKey: 'POST /test/{proxy+}'
+      RouteKey: 'POST /test'
       Target: !Join
         - /
         - - integrations
@@ -96,7 +96,7 @@ Resources:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
       ApiId: !Ref MyAPI
-      AutoDeploy: false
+      AutoDeploy: true
       # DeploymentId: !Ref TestDeployment
       Description: 'default stage'
       StageName: '$default'
@@ -115,7 +115,8 @@ Resources:
       ApiId: !Ref MyAPI
       AuthorizerType: JWT
       IdentitySource:
-        - '$request.querystring.access_token'
+#        - '$request.querystring.access_token'
+        - '$request.header.Authorization'
       JwtConfiguration:
         Audience:
           - !Ref AppClient
@@ -139,7 +140,8 @@ Resources:
               response_body = {
                   'raw path': event.get('rawPath'),
                   'rawQueryString': event.get('rawQueryString'),
-                  'queryStringParameters': event.get('queryStringParameters')
+                  'queryStringParameters': event.get('queryStringParameters'),
+                  'wholeEvent': event
               }
 
               response = {
