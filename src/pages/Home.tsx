@@ -4,6 +4,7 @@ import Button from "react-bootstrap/Button";
 import * as React from "react";
 import {API} from "aws-amplify";
 import {FetchParams, makeFetch} from "../interfaces/FetchInterface";
+import config from "../config";
 
 interface MyViewProperties {
     params: string;
@@ -29,7 +30,7 @@ class Home extends React.Component<MyViewProperties, MyViewState> {
         //var token = id_token_param.substring(id_token_param.indexOf('#')+1);
         //alert(token); str.split('+')[0]
         const fetchParams: FetchParams = {
-            url: 'https://37xm947sf0.execute-api.eu-central-1.amazonaws.com/test',
+            url: config.AppConfig.endpoint + '/test',
             token: access_token,
             method: 'POST',
             body: '',
