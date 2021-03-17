@@ -35,7 +35,7 @@ queries = {
             'TableName': 'CloudNativeDAM_DB',
 #             'IndexName': 'Data-index',
             'ExpressionAttributeNames': {'#I': 'ID'},
-            'ExpressionAttributeValues': {':id': {'S': 'USER#1'}},
+            'ExpressionAttributeValues': {':id': {'S': 'USER#0'}},
             'KeyConditionExpression': '#I = :id'
         },
         'AllCoUsersForThisCluster': {
@@ -43,6 +43,18 @@ queries = {
             'ExpressionAttributeNames': {'#C_ID': 'ID', '#SK': 'SK'},
             'ExpressionAttributeValues': {':id': {'S': 'CLUSTER#1'}, ':sk': {'S': 'PERMISSION#'}},
             'KeyConditionExpression': '#C_ID = :id AND begins_with(#SK, :sk)'
+        },
+#         'userRole': {
+#             'TableName': 'CloudNativeDAM_DB',
+#             'ExpressionAttributeNames': {'#ID': 'ID', '#SK': 'SK'},
+#             'ExpressionAttributeValues': {':id': {'S': 'USER#'}, ':sk': {'S': 'COGNITO_ID'}},
+#             'KeyConditionExpression': 'begins_with(#ID, :id)'
+#         },
+        'userRole': {
+            'TableName': 'CloudNativeDAM_DB',
+            'ExpressionAttributeNames': {'#ID': 'ID'},
+            'ExpressionAttributeValues': {':id': {'S': 'USER#'}},
+            'KeyConditionExpression': 'begins_with(#ID, :id)'
         },
 #         'PhoneArea': {
 #             'TableName': 'CloudNativeDAM_DB',
@@ -79,12 +91,13 @@ queries = {
 #             'KeyConditionExpression': '#STATE = :state AND begins_with(#CITYZIP, :cityzip)'
 #         }
     }
-
-for k, q in queries.items():
-    attribPer = []
-    print(f'\nRunning query {k}')
-    items = query(q)
-    print(f'Returned Items:\n{items}')
+items = query(queries.get('userRole'))
+print(f'Returned Items:\n{items}')
+# for k, q in queries.items():
+#     attribPer = []
+#     print(f'\nRunning query {k}')
+#     items = query(q)
+#     print(f'Returned Items:\n{items}')
     #itemCount = len(items)
     #for i in items:
     #    attribPer.append(len(i))

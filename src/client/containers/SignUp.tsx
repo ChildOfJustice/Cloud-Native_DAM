@@ -4,15 +4,15 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 
 import {connect} from 'react-redux';
-import {IRootState} from '../store';
+import {IRootState} from '../../store';
 import {History} from 'history';
-import {User} from "../interfaces/user";
+import {User} from "../../interfaces/user";
 import {Dispatch} from 'redux';
-import * as tokensService from '../store/demo/tokens.service'
-import * as storeService from '../store/demo/store.service'
-import {DemoActions} from '../store/demo/types';
-import config from "../config";
-import {FetchParams, makeFetch} from "../interfaces/FetchInterface";
+import * as tokensService from '../../store/demo/tokens.service'
+import * as storeService from '../../store/demo/store.service'
+import {DemoActions} from '../../store/demo/types';
+import config from "../../config";
+import {FetchParams, makeFetch} from "../../interfaces/FetchInterface";
 
 
 import { Auth } from 'aws-amplify';

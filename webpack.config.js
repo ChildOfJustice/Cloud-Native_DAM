@@ -10,6 +10,7 @@ module.exports = {
     //devtool: 'source-map',//'inline-source-map'
     output: {
         filename: 'bundle.js',
+        publicPath: '/',
         path: path.resolve(__dirname, 'build'),
     },
     module: {
@@ -56,6 +57,9 @@ module.exports = {
         // new CopyWebpackPlugin({//just copies some files to the build dir
         //     patterns: ['public/index.html']
         // }),
+        new CopyWebpackPlugin({//just copies some files to the build dir
+            patterns: ['public/favicon.ico', 'public/manifest.json', 'public/logo192.png']
+        }),
         new ExtractTextPlugin({ filename: "[name].css" }),
         new webpack.HotModuleReplacementPlugin(),
         new HtmlWebpackPlugin({

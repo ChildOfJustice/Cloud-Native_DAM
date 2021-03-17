@@ -4,14 +4,14 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 
 import {connect} from 'react-redux';
-import {IRootState} from '../store';
+import {IRootState} from '../../store';
 import {Dispatch} from 'redux';
-import * as tokensService from '../store/demo/tokens.service'
-import * as storeService from '../store/demo/store.service'
-import {DemoActions} from '../store/demo/types';
+import * as tokensService from '../../store/demo/tokens.service'
+import * as storeService from '../../store/demo/store.service'
+import {DemoActions} from '../../store/demo/types';
 
 import {History} from 'history';
-import {FetchParams, makeFetch} from "../interfaces/FetchInterface";
+import {FetchParams, makeFetch} from "../../interfaces/FetchInterface";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;

@@ -4,19 +4,19 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 
 import {connect} from 'react-redux';
-import {IRootState} from '../../store';
+import {IRootState} from '../../../store';
 import {Dispatch} from 'redux';
-import * as storeService from '../../store/demo/store.service'
-import {DemoActions} from '../../store/demo/types';
+import * as storeService from '../../../store/demo/store.service'
+import {DemoActions} from '../../../store/demo/types';
 import {Table} from "react-bootstrap";
 import {LinkContainer} from "react-router-bootstrap";
 import Navbar from "react-bootstrap/Navbar";
-import {CoUser, FileMetadata} from "../../interfaces/databaseTables";
+import {CoUser, FileMetadata} from "../../../interfaces/databaseTables";
 import * as AWS from "aws-sdk";
-import config from "../../config";
-import {decodeIdToken} from "../../interfaces/user";
+import config from "../../../config";
+import {decodeIdToken} from "../../../interfaces/user";
 import {History} from "history";
-import {FetchParams, makeFetch} from "../../interfaces/FetchInterface";
+import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 
 const mapStateToProps = ({ demo }: IRootState) => {
     const { authToken, idToken, loading } = demo;
@@ -477,7 +477,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
     // @ts-ignore
     MainComponent = ({ counter }) => (
         <div className="MainComponent">
-            {(this.state.permissions == '0000') ?
+            {(this.state.permissions === '0000') ?
                 <div>
                     You do not have permissions to see this cluster.<br/>
                     ERROR 403
@@ -486,28 +486,28 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                 <div>
                     your permissions are:<br/>
 
-                    {(this.state.permissions[0] == '1') ?
+                    {(this.state.permissions[0] === '1') ?
                         <div>
                             You can Download files<br/>
                         </div>
                         : ''}
-                    {(this.state.permissions[1] == '1') ?
+                    {(this.state.permissions[1] === '1') ?
                         <div>
                             You can Upload files<br/>
                         </div>
                         : ''}
-                    {(this.state.permissions[2] == '1') ?
+                    {(this.state.permissions[2] === '1') ?
                         <div>
                             You can Delete files<br/>
                         </div>
                         : ''}
-                    {(this.state.permissions[3] == '1') ?
+                    {(this.state.permissions[3] === '1') ?
                         <div>
                             You can give permissions to other users<br/>
                         </div>
                         : ''}
 
-                    <this.UploadPanel canUpload={this.state.permissions[1] == "1"}/>
+                    <this.UploadPanel canUpload={this.state.permissions[1] === "1"}/>
                     <br/>
 
                     <this.SharePanel/>

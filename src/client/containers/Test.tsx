@@ -2,26 +2,21 @@ import * as React from "react";
 
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import {LinkContainer} from "react-router-bootstrap";
-import {API} from "aws-amplify";
-import {FetchParams, makeFetch} from "../interfaces/FetchInterface";
+import {FetchParams, makeFetch} from "../../interfaces/FetchInterface";
+import {History} from "history";
 
-function getData(token: string) {
-    const apiName = "MyBlogPostAPI";
-    const path = "/$default/$default";
-    const myInit = {
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: token
-        }
-    };
-    return API.get(apiName, path, myInit);
+interface IProps {
+    //history: History
+    authToken: string
+    /* other props for ChildComponent */
+}
+interface IState {
+
 }
 
-export default class Test extends React.Component {
+export default class Test extends React.Component<IProps, IState> {
     // Initialize the state
-    constructor(props: Readonly<{}>){
+    constructor(props: IProps){
         super(props);
         this.state = {
             msg: ''
@@ -29,7 +24,8 @@ export default class Test extends React.Component {
     }
     // Fetch the text on first mount
     componentDidMount() {
-        this.getText();
+        //this.getText();
+
     }
     // Retrieves the list of items from the Express app
     getText = () => {
@@ -42,12 +38,11 @@ export default class Test extends React.Component {
 
     testCode = (event: any) => {
         const fetchParams: FetchParams = {
-            url: 'https://r6d3hd5px9.execute-api.eu-central-1.amazonaws.com/dev/test',
+            url: '/test',
             //authToken: "",
             //idToken: "",
-            token: "",
-            method: 'POST',
-            body: '',
+            token: this.props.authToken,
+            method: 'GET',
 
             actionDescription: "test request to api gateway"
         }

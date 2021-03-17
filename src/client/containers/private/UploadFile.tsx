@@ -3,15 +3,15 @@ import * as React from "react";
 import * as AWS from "aws-sdk"
 import { v4 as uuidv4 } from 'uuid'
 
-import config from "../../config";
-import {IRootState} from "../../store";
+import config from "../../../config";
+import {IRootState} from "../../../store";
 import {Dispatch} from "redux";
-import {DemoActions} from "../../store/demo/types";
-import * as storeService from "../../store/demo/store.service";
-import {decodeIdToken} from "../../interfaces/user";
+import {DemoActions} from "../../../store/demo/types";
+import * as storeService from "../../../store/demo/store.service";
+import {decodeIdToken} from "../../../interfaces/user";
 import {connect} from "react-redux";
 import Button from "react-bootstrap/Button";
-import {FetchParams, makeFetch} from "../../interfaces/FetchInterface";
+import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 
 ///CONFIG
 //AZURE:

@@ -28,7 +28,8 @@ aws cloudformation deploy \\
  	--stack-name TestStack \\
  	--capabilities CAPABILITY_NAMED_IAM \\
  	--parameter-overrides \\
- 	CognitoCallBackUrl=https://dev.""" + app_description_dictionary.get('app').get('defaultDomain') + """ \\
+ 	CognitoOriginUrl=https://dev.""" + app_description_dictionary.get('app').get('defaultDomain') + """ \\
+ 	CognitoCallBackUrl=https://dev.""" + app_description_dictionary.get('app').get('defaultDomain') + """/private/area \\
  	CognitoLogOutUrl=https://dev.""" + app_description_dictionary.get('app').get('defaultDomain') + """ \\
  	--region  """+ aws_region
 )

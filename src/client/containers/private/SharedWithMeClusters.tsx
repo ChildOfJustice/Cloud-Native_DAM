@@ -1,15 +1,15 @@
 import * as React from "react";
 
 import {connect} from 'react-redux';
-import {IRootState} from '../../store';
+import {IRootState} from '../../../store';
 import {Dispatch} from 'redux';
-import * as storeService from '../../store/demo/store.service'
-import {DemoActions} from '../../store/demo/types';
+import * as storeService from '../../../store/demo/store.service'
+import {DemoActions} from '../../../store/demo/types';
 import {Table} from "react-bootstrap";
 import {LinkContainer} from "react-router-bootstrap";
-import {Cluster} from "../../interfaces/databaseTables";
-import {decodeIdToken} from "../../interfaces/user";
-import {FetchParams, makeFetch} from "../../interfaces/FetchInterface";
+import {Cluster} from "../../../interfaces/databaseTables";
+import {decodeIdToken} from "../../../interfaces/user";
+import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;

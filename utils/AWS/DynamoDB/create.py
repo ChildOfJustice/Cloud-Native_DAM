@@ -27,10 +27,18 @@ if table_name not in existing_tables:
                     {"AttributeName": "SK", "KeyType": "HASH"},
                     {"AttributeName": "Data", "KeyType": "RANGE"},
                 ],
+                "ProvisionedThroughput": {
+                    'ReadCapacityUnits': 1,
+                    'WriteCapacityUnits': 1
+                },
                 "Projection": {"ProjectionType": "ALL"},
             },
         ],
-        BillingMode="PAY_PER_REQUEST",
+        BillingMode="PROVISIONED",#PAY_PER_REQUEST",
+        ProvisionedThroughput={
+            'ReadCapacityUnits': 1,
+            'WriteCapacityUnits': 1
+        },
         Tags=[{"Key": "Module", "Value": "QualificationProject"}],
     )
 

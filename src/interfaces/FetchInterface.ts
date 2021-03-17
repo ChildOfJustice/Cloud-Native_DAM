@@ -22,6 +22,7 @@ makeFetch<Cluster[]>(fetchParams).then(jsonRes => {
     this.setState({clusters: jsonRes})
 }).catch(error => alert("ERROR: " + error))
 */
+import config from "../config";
 
 export interface FetchParams {
     url: string,
@@ -29,7 +30,7 @@ export interface FetchParams {
     //idToken: string,
     token: string,
     method: string,
-    body: any
+    body?: any
 
     actionDescription: string
 }
@@ -56,7 +57,7 @@ async function processData<T>(res: any, actionDescription: string){
 export async function makeFetch<T>(fetchParams: FetchParams): Promise<T> {
 
     if(fetchParams.method === "GET"){
-        let res = await fetch(fetchParams.url, {
+        let res = await fetch(config.AppConfig.endpoint + fetchParams.url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -73,9 +74,9 @@ export async function makeFetch<T>(fetchParams: FetchParams): Promise<T> {
         return processData<T>(res, fetchParams.actionDescription)
 
     }
-    else if(fetchParams.method === "POST"){
-        let res = await fetch(fetchParams.url, {
-            method: 'POST',
+    else if(fetchParams.method === "POST" || fetchParams.method === "DELETE"){
+        let res = await fetch(config.AppConfig.endpoint + fetchParams.url, {
+            method: fetchParams.method,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': fetchParams.token,
@@ -91,23 +92,24 @@ export async function makeFetch<T>(fetchParams: FetchParams): Promise<T> {
         // @ts-ignore
         return processData<T>(res, fetchParams.actionDescription)
     }
-    else if(fetchParams.method === "DELETE"){
-        await fetch(fetchParams.url + "/?" + fetchParams.token, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                //'Auth': fetchParams.authToken,
-                //'Identity': fetchParams.idToken
-            }
-        }).then(res => {
-            return processData<T>(res, fetchParams.actionDescription)
-        }).catch(error => {
-            return new Promise(function (resolve, reject) {
-                console.log("Error for fetch: " + fetchParams.actionDescription + ": " + error)
-                reject("Error for fetch: " + fetchParams.actionDescription + ": " + error)
-            });
-        })
-    } else {
+    // else if(fetchParams.method === "DELETE"){
+    //     await fetch(fetchParams.url + "/?" + fetchParams.token, {
+    //         method: 'DELETE',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //             //'Auth': fetchParams.authToken,
+    //             //'Identity': fetchParams.idToken
+    //         }
+    //     }).then(res => {
+    //         return processData<T>(res, fetchParams.actionDescription)
+    //     }).catch(error => {
+    //         return new Promise(function (resolve, reject) {
+    //             console.log("Error for fetch: " + fetchParams.actionDescription + ": " + error)
+    //             reject("Error for fetch: " + fetchParams.actionDescription + ": " + error)
+    //         });
+    //     })
+    //}
+    else {
         return new Promise<any>(function(resolve, reject) {
             reject("No such method available")
         })
