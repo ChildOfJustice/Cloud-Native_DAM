@@ -24,7 +24,7 @@ result_file = open("../deploy-CF-template.sh", 'w')
 
 output_string = ("""#!/bin/bash
 aws cloudformation deploy \\
- 	--template-file api-gateway-v2-CF-template.yml \\
+ 	--template-file PackagedCloudFormationTemplate.yml \\
  	--stack-name TestStack \\
  	--capabilities CAPABILITY_NAMED_IAM \\
  	--parameter-overrides \\

@@ -1,0 +1,386 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: |
+  Example HTTP API with a JWT authorizer. This template includes a Cognito user pool as the issuer for the JWT authorizer 
+  and a Cognito app client as the audience for the authorizer. The outputs include a URL for a Cognito hosted UI where clients can 
+  sign up and sign in to receive a JWT. After a client signs in, the client is redirected to your HTTP API with an access token 
+  in the URL. To invoke the API with the access token, change the '#' in the URL to a '?' to use the token as a query string parameter.
+Parameters:
+  CognitoCallBackUrl:
+    Type: String
+    Default: http://localhost
+  CognitoOriginUrl:
+    Type: String
+    Default: http://localhost
+  CognitoLogOutUrl:
+    Type: String
+    Default: http://localhost
+  CognitoDomain:
+    Type: String
+    Default: amplifytestappdomain
+
+Resources:
+  #----------------------------------Amplify-----------------------------------
+  # Type: AWS::Amplify::App
+  # Properties:
+  #   Name: amplifytestapp
+  #   OauthToken: String
+  #   Repository: String
+  #   Tags:
+  #     - Tag
+  # Type: AWS::Amplify::Branch
+  # Properties:
+  #   AppId: String
+  #   BasicAuthConfig:
+  #     BasicAuthConfig
+  #   BranchName: String
+  #   BuildSpec: String
+  #   Description: String
+  #   EnableAutoBuild: Boolean
+  #   EnablePerformanceMode: Boolean
+  #   EnablePullRequestPreview: Boolean
+  #   EnvironmentVariables:
+  #     - EnvironmentVariable
+  #   PullRequestEnvironmentName: String
+  #   Stage: String
+  #   Tags:
+  #     - Tag
+  #----------------------------------API-----------------------------------
+  MyAPI:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Description: Example HTTP API
+      Name: api-with-auth
+      ProtocolType: HTTP
+      # Target: !GetAtt MyLambdaFunction.Arn
+      CorsConfiguration:
+        AllowHeaders:
+          - '*'
+        AllowMethods:
+          - '*'
+        AllowOrigins:
+          - !Ref CognitoOriginUrl
+  #-----------------INTEGRATIONS
+  TestIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MyLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  UsersIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  #-----------------ROUTES
+  TestPOSTRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'test-op'
+      RouteKey: 'GET /test'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref TestIntegration
+  UsersRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'user-operations'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'POST /users'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref UsersIntegration
+  #-----------------API GATEWAY DEPLOYMENT
+  TestDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    Properties:
+      ApiId: !Ref MyAPI
+      Description: 'Default deployment'
+      StageName: '$default'
+    DependsOn:
+      - TestStage
+      - TestPOSTRoute
+      - UsersRoute
+  TestStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref MyAPI
+      AutoDeploy: true
+      # DeploymentId: !Ref TestDeployment
+      Description: 'default stage'
+      StageName: '$default'
+  # DefaultRouteOverrides:
+  #   Type: AWS::ApiGatewayV2::ApiGatewayManagedOverrides
+  #   Properties:
+  #     ApiId: !Ref MyAPI
+  #     Route:
+  #       AuthorizationType: JWT
+  #       AuthorizerId: !Ref JWTAuthorizer
+  JWTAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizerType: JWT
+      IdentitySource:
+#        - '$request.querystring.access_token'
+        - '$request.header.Authorization'
+      JwtConfiguration:
+        Audience:
+          - !Ref AppClient
+        Issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+      Name: test-jwt-authorizer
+
+  #----------------------------------BACKEND-----------------------------------
+  SourceCodeBucket:
+    Type: AWS::S3::Bucket
+  CopyZips:
+    Type: Custom::CopyZips
+    Properties:
+      ServiceToken: !GetAtt 'CopyZipsFunction.Arn'
+      DestBucket: !Ref SourceCodeBucket
+      SourceBucket: !Ref QSS3BucketName
+      Prefix: !Ref 'QSS3KeyPrefix'
+      Objects:
+        - functions/packages/MyFunction/lambda.zip
+  MyLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          import json
+
+          def handler(event, context):
+              print(event)
+
+              response_body = {
+                  'raw path': event.get('rawPath'),
+                  'rawQueryString': event.get('rawQueryString'),
+                  'queryStringParameters': event.get('queryStringParameters'),
+                  'wholeEvent': event
+              }
+
+              response = {
+                  'statusCode': 200,
+                  'body': json.dumps(response_body),
+              }
+              return response;
+
+  UsersLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          from boto3.dynamodb.conditions import Attr, Key
+
+          def handler(event, context):
+              table = boto3.resource("dynamodb").Table("CloudNativeDAM_DB")
+              index_name = "Data-index"
+
+              while True:
+                  if (
+                      not table.global_secondary_indexes
+                      or table.global_secondary_indexes[0]["IndexStatus"] != "ACTIVE"
+                  ):
+                      print("Waiting for index to backfill...")
+                      time.sleep(5)
+                      table.reload()
+                  else:
+                      break
+
+              requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
+              print(requester_cognito_user_id)
+              queries = {
+              #C - Cluster
+              #F - File
+              #U - User
+                  'ID': {
+                      'TableName': 'CloudNativeDAM_DB',
+              #             'IndexName': 'Data-index',
+                      'ExpressionAttributeNames': {'#I': 'ID'},
+                      'ExpressionAttributeValues': {':id': {'S': 'USER#1'}},
+                      'KeyConditionExpression': '#I = :id'
+                  },
+                  'AllCoUsersForThisCluster': {
+                      'TableName': 'CloudNativeDAM_DB',
+                      'ExpressionAttributeNames': {'#C_ID': 'ID', '#SK': 'SK'},
+                      'ExpressionAttributeValues': {':id': {'S': 'CLUSTER#1'}, ':sk': {'S': 'PERMISSION#'}},
+                      'KeyConditionExpression': '#C_ID = :id AND begins_with(#SK, :sk)'
+                  },
+                  'userRole': {
+                      'TableName': 'CloudNativeDAM_DB',
+                      #'ProjectionExpression': 'role',
+                      # I CANNOT do the query without PK or with beginsWith condition on PK!!!
+                      'ExpressionAttributeNames': {'#ID': 'ID'},
+                      'ExpressionAttributeValues': {':id': {'S': requester_cognito_user_id}},
+                      'KeyConditionExpression': '#ID = :id'
+                  },
+              }
+
+
+              items = query(queries.get('userRole'))
+              print(f'Returned Items:\n{items}')
+
+              if(len(items) == 0):
+                  try:
+                      create_new_user(table, event.get('requestContext').get('authorizer').get('jwt').get('claims'))
+                      items = query(queries.get('userRole'))
+                      print(f'Returned Items 2! :\n{items}')
+                  except ClientError as e:
+                      print(e)
+                      response_body = {
+                          'message': e
+                      }
+                      response = {
+                          'statusCode': 500,
+                          'body': json.dumps(response_body),
+                      }
+                      return response;
+
+              response_body = {
+                  'raw path': event.get('rawPath'),
+                  'rawQueryString': event.get('rawQueryString'),
+                  'queryStringParameters': event.get('queryStringParameters'),
+                  'items': items,
+                  'role': items[0].get('role').get('S'),
+                  'wholeEvent': event
+              }
+
+              response = {
+                  'statusCode': 200,
+                  'body': json.dumps(response_body),
+              }
+              return response;
+
+          def query(params):
+              dynamodb = boto3.client('dynamodb')
+              return dynamodb.query(**params)['Items']
+
+          def create_new_user(table, jwt_claims):
+              response = table.put_item(
+                 Item={
+                      'ID': jwt_claims.get('sub'),
+                      'SK': jwt_claims.get('username'),
+                      'role': 'ORDINARY_USER'
+                  }
+              )
+              return response
+
+
+  #--------------------------------Roles-----------------------------------
+  APIInvokeTestLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref MyLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeUsersLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UsersLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+
+
+  LambdaDynamoDBWritePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:UpdateItem
+              - dynamodb:DescribeTable
+              - dynamodb:Query
+            Resource: arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB
+
+  FunctionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
+        - !Ref LambdaDynamoDBWritePolicy
+  #--------------------------------Cognito---------------------------------
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: http-api-user-pool
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        # - Name: name
+        #   AttributeDataType: String
+        #   Mutable: true
+        #   Required: true
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+  AppClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthScopes:
+        - aws.cognito.signin.user.admin
+        - email
+        - openid
+        - profile
+      AllowedOAuthFlowsUserPoolClient: true
+      ClientName: api-app-client
+      CallbackURLs:
+        - !Ref CognitoCallBackUrl
+      LogoutURLs:
+        - !Ref CognitoLogOutUrl
+      ExplicitAuthFlows:
+        # - ALLOW_ADMIN_USER_PASSWORD_AUTH
+        # - ALLOW_CUSTOM_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        # - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      UserPoolId: !Ref UserPool
+      SupportedIdentityProviders:
+        - COGNITO
+  HostedUI:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref CognitoDomain
+      UserPoolId: !Ref UserPool
+Outputs:
+  SignupURL:
+    Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}

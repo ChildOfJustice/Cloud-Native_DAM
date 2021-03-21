@@ -4,6 +4,8 @@ Description: |
   and a Cognito app client as the audience for the authorizer. The outputs include a URL for a Cognito hosted UI where clients can 
   sign up and sign in to receive a JWT. After a client signs in, the client is redirected to your HTTP API with an access token 
   in the URL. To invoke the API with the access token, change the '#' in the URL to a '?' to use the token as a query string parameter.
+Transform: 'AWS::Serverless-2016-10-31'
+
 Parameters:
   CognitoCallBackUrl:
     Type: String
@@ -59,8 +61,7 @@ Resources:
           - '*'
         AllowOrigins:
           - !Ref CognitoOriginUrl
-
-#-----------------INTEGRATIONS
+  #-----------------INTEGRATIONS
   TestIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -77,8 +78,24 @@ Resources:
       IntegrationType: 'AWS_PROXY'
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersLambdaFunction.Arn}/invocations
       PayloadFormatVersion: '2.0'
-
-#------------
+  #////////Clusters
+  ClustersIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClustersLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  ClustersDeleteIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClustersDeleteLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  #-----------------ROUTES
   TestPOSTRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -92,13 +109,14 @@ Resources:
         - - integrations
           - !Ref TestIntegration
 
+  #////////Users
   UsersRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref MyAPI
       AuthorizationType: JWT
       AuthorizerId: !Ref JWTAuthorizer
-      OperationName: 'user-operations'
+      OperationName: 'users-any'
       # DOES NOT WORK: 'ANY /users/{proxy+}'
       RouteKey: 'POST /users'
       Target: !Join
@@ -106,7 +124,47 @@ Resources:
         - - integrations
           - !Ref UsersIntegration
 
-
+  #////////Clusters
+  ClustersPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'clusters-post'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'POST /clusters'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref ClustersIntegration
+  ClustersGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'clusters-get'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'GET /clusters'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref ClustersIntegration
+  ClustersDeleteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'clusters-delete'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'DELETE /clusters/delete'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref ClustersDeleteIntegration
+  #-----------------API GATEWAY DEPLOYMENT
   TestDeployment:
     Type: AWS::ApiGatewayV2::Deployment
     Properties:
@@ -117,8 +175,6 @@ Resources:
       - TestStage
       - TestPOSTRoute
       - UsersRoute
-
-
   TestStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
@@ -127,7 +183,6 @@ Resources:
       # DeploymentId: !Ref TestDeployment
       Description: 'default stage'
       StageName: '$default'
-
   # DefaultRouteOverrides:
   #   Type: AWS::ApiGatewayV2::ApiGatewayManagedOverrides
   #   Properties:
@@ -135,7 +190,6 @@ Resources:
   #     Route:
   #       AuthorizationType: JWT
   #       AuthorizerId: !Ref JWTAuthorizer
-
   JWTAuthorizer:
     Type: AWS::ApiGatewayV2::Authorizer
     Properties:
@@ -152,136 +206,34 @@ Resources:
 
   #----------------------------------BACKEND-----------------------------------
   MyLambdaFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
       Runtime: python3.8
       Role: !GetAtt FunctionExecutionRole.Arn
-      Handler: index.handler
-      Code:
-        ZipFile: |
-          import json
-
-          def handler(event, context):
-              print(event)
-
-              response_body = {
-                  'raw path': event.get('rawPath'),
-                  'rawQueryString': event.get('rawQueryString'),
-                  'queryStringParameters': event.get('queryStringParameters'),
-                  'wholeEvent': event
-              }
-
-              response = {
-                  'statusCode': 200,
-                  'body': json.dumps(response_body),
-              }
-              return response;
-
+      Handler: MyLambdaFunction.handler
+      CodeUri: ../../Serverless/Lambdas/MyLambdaFunction.py
   UsersLambdaFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
       Runtime: python3.8
       Role: !GetAtt FunctionExecutionRole.Arn
-      Handler: index.handler
-      Code:
-        ZipFile: |
-          import boto3
-          import json
-          from boto3.dynamodb.conditions import Attr, Key
+      Handler: UsersHandler.handler
+      CodeUri: ../../Serverless/Lambdas/UsersHandler.py
+  ClustersLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: ClustersHandler.handler
+      CodeUri: ../../Serverless/Lambdas/ClustersHandler.py
 
-          def handler(event, context):
-              table = boto3.resource("dynamodb").Table("CloudNativeDAM_DB")
-              index_name = "Data-index"
-
-              while True:
-                  if (
-                      not table.global_secondary_indexes
-                      or table.global_secondary_indexes[0]["IndexStatus"] != "ACTIVE"
-                  ):
-                      print("Waiting for index to backfill...")
-                      time.sleep(5)
-                      table.reload()
-                  else:
-                      break
-
-              requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
-              print(requester_cognito_user_id)
-              queries = {
-              #C - Cluster
-              #F - File
-              #U - User
-                  'ID': {
-                      'TableName': 'CloudNativeDAM_DB',
-              #             'IndexName': 'Data-index',
-                      'ExpressionAttributeNames': {'#I': 'ID'},
-                      'ExpressionAttributeValues': {':id': {'S': 'USER#1'}},
-                      'KeyConditionExpression': '#I = :id'
-                  },
-                  'AllCoUsersForThisCluster': {
-                      'TableName': 'CloudNativeDAM_DB',
-                      'ExpressionAttributeNames': {'#C_ID': 'ID', '#SK': 'SK'},
-                      'ExpressionAttributeValues': {':id': {'S': 'CLUSTER#1'}, ':sk': {'S': 'PERMISSION#'}},
-                      'KeyConditionExpression': '#C_ID = :id AND begins_with(#SK, :sk)'
-                  },
-                  'userRole': {
-                      'TableName': 'CloudNativeDAM_DB',
-                      #'ProjectionExpression': 'role',
-                      # I CANNOT do the query without PK or with beginsWith condition on PK!!!
-                      'ExpressionAttributeNames': {'#ID': 'ID'},
-                      'ExpressionAttributeValues': {':id': {'S': requester_cognito_user_id}},
-                      'KeyConditionExpression': '#ID = :id'
-                  },
-              }
-
-
-              items = query(queries.get('userRole'))
-              print(f'Returned Items:\n{items}')
-
-              if(len(items) == 0):
-                  try:
-                      create_new_user(table, event.get('requestContext').get('authorizer').get('jwt').get('claims'))
-                      items = query(queries.get('userRole'))
-                      print(f'Returned Items 2! :\n{items}')
-                  except ClientError as e:
-                      print(e)
-                      response_body = {
-                          'message': e
-                      }
-                      response = {
-                          'statusCode': 500,
-                          'body': json.dumps(response_body),
-                      }
-                      return response;
-
-              response_body = {
-                  'raw path': event.get('rawPath'),
-                  'rawQueryString': event.get('rawQueryString'),
-                  'queryStringParameters': event.get('queryStringParameters'),
-                  'items': items,
-                  'role': items[0].get('role').get('S'),
-                  'wholeEvent': event
-              }
-
-              response = {
-                  'statusCode': 200,
-                  'body': json.dumps(response_body),
-              }
-              return response;
-
-          def query(params):
-              dynamodb = boto3.client('dynamodb')
-              return dynamodb.query(**params)['Items']
-
-          def create_new_user(table, jwt_claims):
-              response = table.put_item(
-                 Item={
-                      'ID': jwt_claims.get('sub'),
-                      'SK': jwt_claims.get('username'),
-                      'role': 'ORDINARY_USER'
-                  }
-              )
-              return response
-
+  ClustersDeleteLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: ClustersDeleteHandler.handler
+      CodeUri: ../../Serverless/Lambdas/ClustersDeleteHandler.py
 
   #--------------------------------Roles-----------------------------------
   APIInvokeTestLambdaPermission:
@@ -295,6 +247,20 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref UsersLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeClustersLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ClustersLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeClustersDeleteLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ClustersDeleteLambdaFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*

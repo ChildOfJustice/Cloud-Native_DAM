@@ -47,60 +47,8 @@ Amplify.configure({
     }
 });
 
-
-
 class App extends React.Component {
 
-    // componentDidMount() {
-    //     let cognitoRole1: CognitoRole = {
-    //         cognito_user_group: "Admin",
-    //         role: "ADMINISTRATOR"
-    //     }
-    //
-    //     fetch('/cognitoRoles/create',{
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json'
-    //             // 'Content-Type': 'application/x-www-form-urlencoded',
-    //         },
-    //         body: JSON.stringify(cognitoRole1)
-    //     })
-    //         .then(res => {
-    //             let response_ = res.json()
-    //             console.log(response_)
-    //             if(res.ok) {
-    //                 //alert("Successfully signed you up")
-    //             }
-    //             else alert("Error with DB INITIALIZATION 1, see logs for more info")
-    //         })
-    //         .catch(error => console.log("Fetch error: " + error))
-    //     //^
-    //     let cognitoRole2: CognitoRole = {
-    //         cognito_user_group: "User",
-    //         role: "ORDINARY_USER"
-    //     }
-    //     fetch('/cognitoRoles/create',{
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json'
-    //             // 'Content-Type': 'application/x-www-form-urlencoded',
-    //         },
-    //         body: JSON.stringify(cognitoRole2)
-    //     })
-    //         .then(res => {
-    //             let response_ = res.json()
-    //             console.log(response_)
-    //             if(res.ok) {
-    //                 //alert("Successfully signed you up")
-    //             }
-    //             else alert("Error with DB INITIALIZATION 2, see logs for more info")
-    //         })
-    //         .catch(error => console.log("Fetch error: " + error))
-    //     //^
-    //     console.log("I WAS HERE!!!")
-    // }
-
-    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     render() {
         const App = () => (
             <div>
@@ -119,8 +67,6 @@ class App extends React.Component {
                         <Route path='/private/area' component={PersonalPage}/>
                         <Route path='/private/sharedWithMeClusters' component={SharedWithMeClusters}/>
                         <Route path='/private/uploadFile/:clusterId' component={UploadFile}/>
-                        <Route path='/signIn' component={SignIn} />
-                        <Route path='/signUp' component={SignUp}/>
                         <Route path='/test' component={Test}/>
                     </Switch>
                 </Container>

@@ -68,10 +68,10 @@ class PersonalPage extends React.Component<ReduxType, IState> {
     }
 
 
-    constructor(props: ReduxType) {
-        super(props);
-        //alert(props)
-    }
+    // constructor(props: ReduxType) {
+    //     super(props);
+    //     //alert(props)
+    // }
 
 
     componentDidMount() {
@@ -89,6 +89,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         this.getAuthToken()
     }
 
+    //Initialization functions
     //getAuthToken = (callback: (next:any) => void) => {
     getAuthToken = () => {
 
@@ -104,7 +105,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         let access_token = token_params_arr[0].substring(token_params_arr[0].indexOf('=')+1)
 
         if (access_token === ''){
-            alert('loading store')
+            //alert('loading store')
             this.props.loadStore()
             this.getUserRole(this.props.authToken)
         } else {
@@ -129,27 +130,51 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         //     console.log(jsonRes)
         // }).catch(error => alert("ERROR: " + error))
     }
-
-
-
-    createCluster = () => {
-
+    getUserRole = (authToken: string) => {
+        if (authToken === '') {
+            return
+        }
         let clusterData: Cluster = {
-            clusterId: null,
             name: this.state.newClusterName,
             ownerUserId: this.state.userId,
         }
 
-        const { authToken, idToken, loading} = this.props;
 
-        const fetchParams: FetchParams = {
-            url: '/clusters/create',
-            //authToken: authToken,
-            //idToken: idToken,
-            token: "",
+        let fetchParams: FetchParams = {
+            //url: '/users/find?userId=' + this.state.userId,
+            url: '/users',
+            token: authToken,
             method: 'POST',
             body: clusterData,
 
+            actionDescription: "get user to set his role"
+        }
+
+        makeFetch<any>(fetchParams).then(jsonRes => {
+            console.log(jsonRes)
+            //alert(JSON.stringify(jsonRes));
+            this.setState({userRole: jsonRes['role']})
+        })
+            .catch(error => alert("ERROR: " + error))
+    }
+
+    //^
+
+
+    //Request functions:
+    createCluster = () => {
+
+        let clusterData: Cluster = {
+            name: this.state.newClusterName
+        }
+
+        const { authToken } = this.props;
+        console.log(authToken)
+        const fetchParams: FetchParams = {
+            url: '/clusters',
+            token: authToken,
+            method: 'POST',
+            body: clusterData,
             actionDescription: "create cluster"
         }
 
@@ -158,137 +183,45 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             this.getAllUserClusters()
         }).catch(error => alert("ERROR: " + error))
     }
-    deleteFile = (S3uniqueName: string, fileId: number | null) => {
+    getAllUserClusters = () => {
+        const { authToken } = this.props;
+        if (authToken === '') {
+            return
+        }
 
-        AWS.config.update({
-            region: config.AWS.S3.bucketRegion,
-            credentials: new AWS.CognitoIdentityCredentials({
-                IdentityPoolId: config.AWS.IdentityPool.IdentityPoolId
-            })
-        });
-
-        var s3 = new AWS.S3({
-            apiVersion: '2006-03-01',
-            params: {Bucket: config.AWS.S3.bucketName}
-        });
-
-        var params = {Bucket: config.AWS.S3.bucketName, Key: S3uniqueName};
-
-        s3.deleteObject(params, function (err: AWSError, data: DeleteObjectOutput) {
-            if (err) {
-                alert("Cannot delete this file from S3 bucket!")
-                console.log(err, err.stack);  // error
-            } else {
-                console.log();
-                alert("File has been deleted.")
-            }
-        })
-
-        // @ts-ignore
-        var clusterId_ = this.props.match.params.clusterId
-        const { authToken, idToken, loading} = this.props;
-
-        const fetchParams: FetchParams = {
-            url: '/file_cluster/delete?fileId=' + fileId + "&clusterId=" + clusterId_,
-            //authToken: authToken,
-            //idToken: idToken,
-            token: "",
-            method: 'DELETE',
-            body: null,
-
-            actionDescription: "delete file-cluster"
+        let fetchParams: FetchParams = {
+            url: '/clusters',
+            token: authToken,
+            method: 'GET',
+            actionDescription: "get all user's clusters"
         }
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-
-            const { authToken, idToken, loading} = this.props;
-
-            const fetchParams: FetchParams = {
-                url: '/files/metadata/delete?id=' + fileId,
-                //authToken: authToken,
-                //idToken: idToken,
-                token: "",
-                method: 'DELETE',
-                body: null,
-
-                actionDescription: "delete file"
-            }
-
-            makeFetch<any>(fetchParams).then(jsonRes => {
-                console.log(jsonRes)
-                // @ts-ignore
-                this.loadFilesMetadata(this.props.match.params.clusterId)
-            }).catch(error => alert("ERROR: " + error))
+            this.setState({clusters: jsonRes})
         }).catch(error => alert("ERROR: " + error))
-
-
     }
+    deleteCluster = (clusterId: number | undefined) => {
 
-    async deleteCluster(clusterId: number | null) {
-
-        var files: FileMetadata[]
-
-        const { authToken, idToken, loading} = this.props;
-
-        let fetchParams: FetchParams = {
-            url: '/files/metadata/findAll?clusterId=' + clusterId,
-            //authToken: authToken,
-            //idToken: idToken,
-            token: "",
-            method: 'GET',
-            body: null,
-
-            actionDescription: "delete file"
-        }
-
-        await makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            files = jsonRes
-            if (files.length != 0) {
-                alert("You need to delete all files first!")
-                return
-            }
-            //TODO use async and wait files to be deleted
-            //delete each file from file-cluster table and from metadata table:
-            files.forEach(file => {
-                this.deleteFile(file.S3uniqueName, file.id)
-            })
-        }).catch(error => alert("ERROR: " + error))
-        //get all files stored in this cluster
-
-
-
-        //delete cousers associated with this cluster
-        fetchParams = {
-            url: '/cousers/deleteAllAssociatedWithCluster?clusterId=' + clusterId,
-            //authToken: authToken,
-            //idToken: idToken,
-            token: "",
-            method: 'DELETE',
-            body: null,
-
-            actionDescription: "delete all associated co-users with the cluster"
-        }
-
-        await makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-        }).catch(error => alert("ERROR: " + error))
-
+        const { authToken } = this.props;
 
         //delete cluster
-        fetchParams = {
-            url: '/clusters/delete?clusterId=' + clusterId,
+        let clusterData: Cluster = {
+            clusterId: clusterId
+        }
+
+        let fetchParams = {
+            url: '/clusters/delete',
             //authToken: authToken,
             //idToken: idToken,
-            token: "",
+            token: authToken,
             method: 'DELETE',
-            body: null,
+            body: clusterData,
 
             actionDescription: "delete cluster"
         }
 
-        await makeFetch<any>(fetchParams).then(jsonRes => {
+        makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
             this.getAllUserClusters()
         }).catch(error => alert("ERROR: " + error))
@@ -296,6 +229,8 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         this.props.history.push("/private/area")
     }
+
+    //^
 
     async deleteUser() {
         if (this.state.clusters.length != 0) {
@@ -340,61 +275,6 @@ class PersonalPage extends React.Component<ReduxType, IState> {
     }
 
 
-    getUserRole = (authToken: string) => {
-        // if (this.state.userId == '') {
-        //     return
-        // }
-        let clusterData: Cluster = {
-            clusterId: null,
-            name: this.state.newClusterName,
-            ownerUserId: this.state.userId,
-        }
-
-
-        let fetchParams: FetchParams = {
-            //url: '/users/find?userId=' + this.state.userId,
-            url: '/users',
-            token: authToken,
-            method: 'POST',
-            body: clusterData,
-
-            actionDescription: "get user to set his role"
-        }
-
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            //alert(JSON.stringify(jsonRes));
-            this.setState({userRole: jsonRes['role']})
-        })
-        //.catch(error => alert("ERROR: " + error))
-
-
-    }
-
-    getAllUserClusters = () => {
-        if (this.state.userId == '') {
-            return
-        }
-
-        const { authToken, idToken, loading} = this.props;
-
-        let fetchParams: FetchParams = {
-            url: '/clusters/findAll?ownerUserId=' + this.state.userId,
-            //authToken: authToken,
-            //idToken: idToken,
-            token: "",
-            method: 'GET',
-            body: null,
-
-            actionDescription: "get all user's clusters"
-        }
-
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            this.setState({clusters: jsonRes})
-        }).catch(error => alert("ERROR: " + error))
-    }
-
     getUsedStorageSize = () => {
 
         const { authToken, idToken, loading} = this.props;
@@ -417,7 +297,6 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             else this.setState({usedStorageSize: jsonRes[0].usedStorageSize})
         }).catch(error => alert("ERROR: " + error))
     }
-
     makeAdminQuery = () => {
         if (this.state.queryToDB == '') {
             return
@@ -459,7 +338,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
     // @ts-ignore
     AdminPanel = ({isAdmin}) => (
-        <div className="hello">
+        <div className="AdminPanel">
             {isAdmin ? <Form.Group controlId="adminPanel">
                 <Form.Label>Query to Database</Form.Label>
                 <Form.Control onChange={this._onChangeQuery} type="string" placeholder="Query"/>
@@ -471,11 +350,8 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         </div>
     );
 
-    //eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     render() {
-
-        var counter = 0
-        
+        let counter = 0;
 
         // this.getUserRole()  <---- watch this, the page will have the 401 error, and immediately after that, everything will work
         //this is because of the state being changed with the first function getToken!!!
@@ -486,17 +362,16 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                     <Test authToken={this.props.authToken}/>
                     Please login.<br/>
                     ERROR 403<br/>
-                    your access token now is {this.props.authToken}
                 </div>
                 :
 
             <div>
-                Your user id is: "{this.state.userId}".<br/>
+                {/*Your user id is: "{this.state.userId}".<br/>*/}
                 Your role is: "{this.state.userRole}".<br/>
                 Your current used storage size is {this.state.usedStorageSize} MB.
-                <Button onClick={() => this.deleteUser()} variant="danger">DELETE THIS ACCOUNT</Button> <br/>
 
-                <Form.Group controlId="formBasicUserName">
+                <Test authToken={this.props.authToken}/>
+                <Form.Group controlId="ClusterName">
                     <Form.Label>Cluster Name</Form.Label>
                     <Form.Control onChange={this._onChangeClusterName} type="string" placeholder="Cluster name"/>
                 </Form.Group>
@@ -540,6 +415,8 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
                     </tbody>
                 </Table>
+
+                <Button onClick={() => this.deleteUser()} variant="danger">DELETE THIS ACCOUNT</Button> <br/>
             </div>
 
         )
