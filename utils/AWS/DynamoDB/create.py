@@ -24,8 +24,8 @@ if table_name not in existing_tables:
             {
                 "IndexName": "Data-index",
                 "KeySchema": [
-                    {"AttributeName": "SK", "KeyType": "HASH"},
-                    {"AttributeName": "Data", "KeyType": "RANGE"},
+                    {"AttributeName": "Data", "KeyType": "HASH"},
+                    {"AttributeName": "SK", "KeyType": "RANGE"},
                 ],
                 "ProvisionedThroughput": {
                     'ReadCapacityUnits': 1,

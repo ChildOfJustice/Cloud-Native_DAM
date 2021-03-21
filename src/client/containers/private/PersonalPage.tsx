@@ -75,6 +75,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
 
     componentDidMount() {
+        alert("did mount")
         this.initComponent()
 
         //await this.props.loadStore()
@@ -105,12 +106,13 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         let access_token = token_params_arr[0].substring(token_params_arr[0].indexOf('=')+1)
 
         if (access_token === ''){
-            //alert('loading store')
-            this.props.loadStore()
-            this.getUserRole(this.props.authToken)
+            alert('loading store')
+            this.props.loadStore()//TODO no actions further
+            this.getUserRole(this.props.authToken) //IGNORED (Home/PersonalPage/=> refresh)
         } else {
             this.props.setAuthToken(access_token)
             this.props.saveStore()
+            alert('set new auth token')
             this.getUserRole(access_token)
         }
         
@@ -169,7 +171,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         }
 
         const { authToken } = this.props;
-        console.log(authToken)
+
         const fetchParams: FetchParams = {
             url: '/clusters',
             token: authToken,
@@ -198,7 +200,8 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-            this.setState({clusters: jsonRes})
+
+            this.setState({clusters: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], name: item['name']['S']}})})
         }).catch(error => alert("ERROR: " + error))
     }
     deleteCluster = (clusterId: number | undefined) => {

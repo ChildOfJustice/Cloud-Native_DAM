@@ -104,7 +104,7 @@ Resources:
         - /
         - - integrations
           - Ref: UsersIntegration
-  ClustersRoute:
+  ClustersPostRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId:
@@ -112,8 +112,23 @@ Resources:
       AuthorizationType: JWT
       AuthorizerId:
         Ref: JWTAuthorizer
-      OperationName: clusters-post-get
-      RouteKey: ANY /clusters
+      OperationName: clusters-post
+      RouteKey: POST /clusters
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: ClustersIntegration
+  ClustersGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: MyAPI
+      AuthorizationType: JWT
+      AuthorizerId:
+        Ref: JWTAuthorizer
+      OperationName: clusters-get
+      RouteKey: GET /clusters
       Target:
         Fn::Join:
         - /
@@ -175,8 +190,8 @@ Resources:
         Fn::GetAtt:
         - FunctionExecutionRole
         - Arn
-      Handler: index.handler
-      CodeUri: s3://sardor-test-code/a0de6af04c96e7796b8898279ccec73f
+      Handler: MyLambdaFunction.handler
+      CodeUri: s3://sardor-test-code/12e1dcf88ad0a72b6ef1f05a84df883f
   UsersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -185,8 +200,8 @@ Resources:
         Fn::GetAtt:
         - FunctionExecutionRole
         - Arn
-      Handler: index.handler
-      CodeUri: s3://sardor-test-code/29fc63c737ad35fe545e6bc6d652d7ab
+      Handler: UsersHandler.handler
+      CodeUri: s3://sardor-test-code/acb83f9392547bc128021ed4dab29d5c
   ClustersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -195,8 +210,8 @@ Resources:
         Fn::GetAtt:
         - FunctionExecutionRole
         - Arn
-      Handler: index.handler
-      CodeUri: s3://sardor-test-code/3bd7e8a82a48cae5e401c0aabecfe4df
+      Handler: ClustersHandler.handler
+      CodeUri: s3://sardor-test-code/ce60396aa822dedd21c338ba899d9f99
   ClustersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -205,8 +220,8 @@ Resources:
         Fn::GetAtt:
         - FunctionExecutionRole
         - Arn
-      Handler: index.handler
-      CodeUri: s3://sardor-test-code/e7f97b29f7d0ecece2d8c79dfb339691
+      Handler: ClustersDeleteHandler.handler
+      CodeUri: s3://sardor-test-code/63984031ab7b73c1cdfd236849eecdd9
   APIInvokeTestLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -319,3 +334,5 @@ Outputs:
   SignupURL:
     Value:
       Fn::Sub: https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}
+  ApiEndpoint:
+    Value: MyAPI.ApiEndpoint

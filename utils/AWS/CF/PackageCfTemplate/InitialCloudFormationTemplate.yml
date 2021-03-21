@@ -280,7 +280,9 @@ Resources:
               - dynamodb:UpdateItem
               - dynamodb:DescribeTable
               - dynamodb:Query
-            Resource: arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB
+            Resource:
+              - arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB
+              - arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB/index/*
 
   FunctionExecutionRole:
     Type: AWS::IAM::Role
@@ -347,3 +349,5 @@ Resources:
 Outputs:
   SignupURL:
     Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}
+  ApiEndpoint:
+    Value: MyAPI.ApiEndpoint

@@ -6,36 +6,36 @@ def handler(event, context):
     table = boto3.resource("dynamodb").Table("CloudNativeDAM_DB")
     index_name = "Data-index"
 
-    while True:
-        if (
-            not table.global_secondary_indexes
-            or table.global_secondary_indexes[0]["IndexStatus"] != "ACTIVE"
-        ):
-            print("Waiting for index to backfill...")
-            time.sleep(5)
-            table.reload()
-        else:
-            break
+    # while True:
+    #     if (
+    #         not table.global_secondary_indexes
+    #         or table.global_secondary_indexes[0]["IndexStatus"] != "ACTIVE"
+    #     ):
+    #         print("Waiting for index to backfill...")
+    #         time.sleep(5)
+    #         table.reload()
+    #     else:
+    #         break
 
     requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
-    print(requester_cognito_user_id)
+    # print(requester_cognito_user_id)
     queries = {
     #C - Cluster
     #F - File
     #U - User
-        'ID': {
-            'TableName': 'CloudNativeDAM_DB',
-            #             'IndexName': 'Data-index',
-            'ExpressionAttributeNames': {'#I': 'ID'},
-            'ExpressionAttributeValues': {':id': {'S': 'USER#1'}},
-            'KeyConditionExpression': '#I = :id'
-        },
-            'AllCoUsersForThisCluster': {
-            'TableName': 'CloudNativeDAM_DB',
-            'ExpressionAttributeNames': {'#C_ID': 'ID', '#SK': 'SK'},
-            'ExpressionAttributeValues': {':id': {'S': 'CLUSTER#1'}, ':sk': {'S': 'PERMISSION#'}},
-            'KeyConditionExpression': '#C_ID = :id AND begins_with(#SK, :sk)'
-        },
+        # 'ID': {
+        #     'TableName': 'CloudNativeDAM_DB',
+        #     #             'IndexName': 'Data-index',
+        #     'ExpressionAttributeNames': {'#I': 'ID'},
+        #     'ExpressionAttributeValues': {':id': {'S': 'USER#1'}},
+        #     'KeyConditionExpression': '#I = :id'
+        # },
+        #     'AllCoUsersForThisCluster': {
+        #     'TableName': 'CloudNativeDAM_DB',
+        #     'ExpressionAttributeNames': {'#C_ID': 'ID', '#SK': 'SK'},
+        #     'ExpressionAttributeValues': {':id': {'S': 'CLUSTER#1'}, ':sk': {'S': 'PERMISSION#'}},
+        #     'KeyConditionExpression': '#C_ID = :id AND begins_with(#SK, :sk)'
+        # },
             'userRole': {
             'TableName': 'CloudNativeDAM_DB',
             #'ProjectionExpression': 'role',
@@ -48,13 +48,22 @@ def handler(event, context):
 
 
     items = query(queries.get('userRole'))
-    print(f'Returned Items:\n{items}')
+    # print(f'Returned Items:\n{items}')
 
     if(len(items) == 0):
         try:
             create_new_user(table, event.get('requestContext').get('authorizer').get('jwt').get('claims'))
-            items = query(queries.get('userRole'))
-            print(f'Returned Items 2! :\n{items}')
+            # items = query(queries.get('userRole'))
+            # print(f'Returned Items 2! :\n{items}')
+            response_body = {
+                'role': 'ORDINARY_USER'
+            }
+
+            response = {
+                'statusCode': 200,
+                'body': json.dumps(response_body),
+            }
+            return response
         except ClientError as e:
             print(e)
             response_body = {
@@ -67,12 +76,7 @@ def handler(event, context):
             return response
 
     response_body = {
-        'raw path': event.get('rawPath'),
-        'rawQueryString': event.get('rawQueryString'),
-        'queryStringParameters': event.get('queryStringParameters'),
-        'items': items,
-        'role': items[0].get('role').get('S'),
-        'wholeEvent': event
+        'role': items[0].get('role').get('S')
     }
 
     response = {
