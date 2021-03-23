@@ -76,18 +76,14 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
     componentDidMount() {
         alert("did mount")
-        this.initComponent()
-
+        this.getAuthToken()
+        this.getUserRole(this.props.authToken)
         //await this.props.loadStore()
         // await decodeIdToken(this.props.idToken).then(userid => this.setState({userId: userid}))
         // await this.getAllUserClusters()
         // await this.getUserRole()
         // await this.getUsedStorageSize()
 
-    }
-
-    initComponent = () => {
-        this.getAuthToken()
     }
 
     //Initialization functions
@@ -108,12 +104,12 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         if (access_token === ''){
             alert('loading store')
             this.props.loadStore()//TODO no actions further
-            this.getUserRole(this.props.authToken) //IGNORED (Home/PersonalPage/=> refresh)
+             //IGNORED (Home/PersonalPage/=> refresh)
         } else {
             this.props.setAuthToken(access_token)
             this.props.saveStore()
             alert('set new auth token')
-            this.getUserRole(access_token)
+            // this.getUserRole(access_token)
         }
         
 
@@ -133,7 +129,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         // }).catch(error => alert("ERROR: " + error))
     }
     getUserRole = (authToken: string) => {
+        alert('Trying to get user role')
         if (authToken === '') {
+            alert('token is empty')
             return
         }
         let clusterData: Cluster = {
@@ -232,89 +230,76 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         this.props.history.push("/private/area")
     }
+    deleteUser = () => {
 
-    //^
-
-    async deleteUser() {
-        if (this.state.clusters.length != 0) {
-            alert("You need to delete all clusters first!")
-            return
-        }
         for (const cluster of this.state.clusters) {
-            await this.deleteCluster(cluster.clusterId)
+            this.deleteCluster(cluster.clusterId)
         }
 
         const cognito = new CognitoService();
-        await cognito.deleteUser(this.props.authToken)
+        cognito.deleteUser(this.props.authToken)
             .then(promiseOutput => {
                 if (promiseOutput.success) {
-                    console.log("user successfully deleted: " + promiseOutput.msg)
+                    console.log("Cognito user successfully deleted: " + promiseOutput.msg)
                     // @ts-ignore
                     //userCognitoId = promiseOutput.msg.UserSub
                 } else {
-                    console.log("ERROR WITH DELETING USER: " + promiseOutput.msg)
+                    console.log("ERROR WITH DELETING COGNITO USER: " + promiseOutput.msg)
                     return
                 }
             });
 
         //delete user
-        const { authToken, idToken, loading} = this.props;
+        const { authToken } = this.props;
 
         let fetchParams: FetchParams = {
-            url: '/users/delete?cognitoUserId=' + this.state.userId,
-            //authToken: authToken,
-            //idToken: idToken,
-            token: "",
+            url: '/users/delete',
+            token: authToken,
             method: 'DELETE',
-            body: null,
+            body: '',
 
             actionDescription: "delete user"
         }
 
-        await makeFetch<any>(fetchParams).then(jsonRes => {
+        makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
             this.props.history.push("/")
         }).catch(error => alert("ERROR: " + error))
     }
 
-
     getUsedStorageSize = () => {
 
-        const { authToken, idToken, loading} = this.props;
+        const { authToken } = this.props;
 
         let fetchParams: FetchParams = {
-            url: '/files/metadata/calcUsedSize?ownerUserId=' + this.state.userId,
-            //authToken: authToken,
-            //idToken: idToken,
-            token: "",
+            url: '/files/?calcUsedSize=1',
+            token: authToken,
             method: 'GET',
-            body: null,
 
             actionDescription: "get used storage size"
         }
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-            if (jsonRes[0].usedStorageSize == null)
-                this.setState({usedStorageSize: 0})
-            else this.setState({usedStorageSize: jsonRes[0].usedStorageSize})
+            // if (jsonRes['usedStorageSize'] == null)
+            //     this.setState({usedStorageSize: 0})
+            //else this.setState({usedStorageSize: jsonRes['usedStorageSize']})
+            this.setState({usedStorageSize: jsonRes['usedStorageSize']})
         }).catch(error => alert("ERROR: " + error))
     }
     makeAdminQuery = () => {
-        if (this.state.queryToDB == '') {
+        if (this.state.queryToDB === '') {
             return
         }
 
         const data = {
             query: this.state.queryToDB
         }
-        const {authToken, idToken, loading} = this.props;
+        const { authToken } = this.props;
 
         const fetchParams: FetchParams = {
-            url: '/protected/adminQuery',
-            //authToken: authToken,
-            //idToken: idToken,
-            token: "",
+            url: '/admin',
+            token: authToken,
             method: 'POST',
             body: data,
 
@@ -326,6 +311,8 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             this.setState({dbResponse: JSON.stringify(jsonRes[0])})
         }).catch(error => alert("ERROR: " + error))
     }
+    //^
+    //to use async: async deleteUser() NOT arrow function!!!
 
     _onChangeClusterName = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({newClusterName: (e.target as HTMLInputElement).value})

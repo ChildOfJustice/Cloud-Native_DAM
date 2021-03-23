@@ -37,7 +37,7 @@ def handler(event, context):
             # GET all user's clusters
             query_params = {
                 'TableName': 'CloudNativeDAM_DB',
-                'IndexName': 'Data-index',
+                'IndexName': index_name,
                 'ExpressionAttributeNames': {'#C_ID': 'SK', '#OWN': 'Data'},
                 'ExpressionAttributeValues': {':Cid': {'S': 'CLUSTER#'},':Uid': {'S': requester_cognito_user_id}},
                 'KeyConditionExpression': '#OWN = :Uid AND begins_with(#C_ID, :Cid)'

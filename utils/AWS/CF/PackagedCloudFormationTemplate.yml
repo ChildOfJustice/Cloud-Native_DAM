@@ -54,6 +54,16 @@ Resources:
       IntegrationUri:
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersLambdaFunction.Arn}/invocations
       PayloadFormatVersion: '2.0'
+  UsersDeleteIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Ref: MyAPI
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersDeleteLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
   ClustersIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -73,6 +83,26 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri:
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClustersDeleteLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  FilesIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Ref: MyAPI
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FilesLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  AdminIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Ref: MyAPI
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminLambdaFunction.Arn}/invocations
       PayloadFormatVersion: '2.0'
   TestPOSTRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -97,13 +127,28 @@ Resources:
       AuthorizationType: JWT
       AuthorizerId:
         Ref: JWTAuthorizer
-      OperationName: users-any
+      OperationName: users-post
       RouteKey: POST /users
       Target:
         Fn::Join:
         - /
         - - integrations
           - Ref: UsersIntegration
+  UsersDeleteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: MyAPI
+      AuthorizationType: JWT
+      AuthorizerId:
+        Ref: JWTAuthorizer
+      OperationName: users-delete
+      RouteKey: DELETE /users
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: UsersDeleteIntegration
   ClustersPostRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -149,6 +194,36 @@ Resources:
         - /
         - - integrations
           - Ref: ClustersDeleteIntegration
+  FilesGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: MyAPI
+      AuthorizationType: JWT
+      AuthorizerId:
+        Ref: JWTAuthorizer
+      OperationName: files-get
+      RouteKey: GET /files
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: FilesIntegration
+  AdminPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: MyAPI
+      AuthorizationType: JWT
+      AuthorizerId:
+        Ref: JWTAuthorizer
+      OperationName: admin-post
+      RouteKey: POST /admin
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: AdminIntegration
   TestDeployment:
     Type: AWS::ApiGatewayV2::Deployment
     Properties:
@@ -191,7 +266,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: MyLambdaFunction.handler
-      CodeUri: s3://sardor-test-code/12e1dcf88ad0a72b6ef1f05a84df883f
+      CodeUri: s3://sardor-test-code/5eca1df420f5c2046da3890741a077b8
   UsersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -201,7 +276,17 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersHandler.handler
-      CodeUri: s3://sardor-test-code/acb83f9392547bc128021ed4dab29d5c
+      CodeUri: s3://sardor-test-code/2bbfe4a57ba7777f2a84176778dc07a4
+  UsersDeleteLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role:
+        Fn::GetAtt:
+        - FunctionExecutionRole
+        - Arn
+      Handler: UsersDeleteHandler.handler
+      CodeUri: s3://sardor-test-code/c1ec3eb588a2f41cb14cf94c687cd156
   ClustersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -211,7 +296,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersHandler.handler
-      CodeUri: s3://sardor-test-code/ce60396aa822dedd21c338ba899d9f99
+      CodeUri: s3://sardor-test-code/27c0a7f6dd17ba7840bfc19608b75f9d
   ClustersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -221,7 +306,27 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/63984031ab7b73c1cdfd236849eecdd9
+      CodeUri: s3://sardor-test-code/2e9c6116016c8e575a38a0dede72fc00
+  FilesLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role:
+        Fn::GetAtt:
+        - FunctionExecutionRole
+        - Arn
+      Handler: FilesHandler.handler
+      CodeUri: s3://sardor-test-code/9b18fa3654f10f41abbb95f964066bb0
+  AdminLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role:
+        Fn::GetAtt:
+        - FunctionExecutionRole
+        - Arn
+      Handler: AdminHandler.handler
+      CodeUri: s3://sardor-test-code/1d5ba9bb7f6461cbfe5d83934a5579fc
   APIInvokeTestLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -236,6 +341,15 @@ Resources:
     Properties:
       FunctionName:
         Ref: UsersLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeUsersDeleteLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: UsersDeleteLambdaFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn:
@@ -258,6 +372,24 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn:
         Fn::Sub: arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeFilesLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: FilesLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeAdminLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: AdminLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
   LambdaDynamoDBWritePolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -272,7 +404,9 @@ Resources:
           - dynamodb:UpdateItem
           - dynamodb:DescribeTable
           - dynamodb:Query
-          Resource: arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB
+          Resource:
+          - arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB
+          - arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB/index/*
   FunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
