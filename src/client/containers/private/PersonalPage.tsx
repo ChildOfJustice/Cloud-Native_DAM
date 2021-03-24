@@ -74,21 +74,18 @@ class PersonalPage extends React.Component<ReduxType, IState> {
     // }
 
 
-    componentDidMount() {
-        alert("did mount")
-        this.getAuthToken()
-        this.getUserRole(this.props.authToken)
-        //await this.props.loadStore()
+    async componentDidMount() {
+        await this.getAuthToken()
+        this.getUserRole()
+        // await this.props.loadStore()
         // await decodeIdToken(this.props.idToken).then(userid => this.setState({userId: userid}))
-        // await this.getAllUserClusters()
-        // await this.getUserRole()
-        // await this.getUsedStorageSize()
 
+        // await this.getUserRole()
     }
 
     //Initialization functions
     //getAuthToken = (callback: (next:any) => void) => {
-    getAuthToken = () => {
+    async getAuthToken(){
 
         // console.log(window.location.search.substring(1)); // should print "param1=value1&param2=value2...."
         //let id_token_param = window.location.search.substring(1); !!!! //access_token=...
@@ -102,16 +99,17 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         let access_token = token_params_arr[0].substring(token_params_arr[0].indexOf('=')+1)
 
         if (access_token === ''){
-            alert('loading store')
-            this.props.loadStore()//TODO no actions further
+            //alert('loading store')
+            await this.props.loadStore()          //ASYNC ACTION!!!!! (If you remove await - further code in this function wont have the token loaded from the store!!
+            // alert("!!!! AFTER LOADING: " + this.props.authToken)
              //IGNORED (Home/PersonalPage/=> refresh)
         } else {
-            this.props.setAuthToken(access_token)
-            this.props.saveStore()
-            alert('set new auth token')
+            await this.props.setAuthToken(access_token)
+            await this.props.saveStore()    //ASYNC ACTION!!!!! (If you remove await - further code in this function wont have the new saved store with the token!!
+            // alert('set new auth token')
             // this.getUserRole(access_token)
         }
-        
+
 
         //var token = id_token_param.substring(id_token_param.indexOf('#')+1);
         //alert(token); str.split('+')[0]
@@ -128,8 +126,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         //     console.log(jsonRes)
         // }).catch(error => alert("ERROR: " + error))
     }
-    getUserRole = (authToken: string) => {
-        alert('Trying to get user role')
+    getUserRole = () => {
+        const { authToken } = this.props
+        //alert(this.props.authToken)
         if (authToken === '') {
             alert('token is empty')
             return
@@ -154,14 +153,56 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             console.log(jsonRes)
             //alert(JSON.stringify(jsonRes));
             this.setState({userRole: jsonRes['role']})
+            this.getAllUserClusters()
+            this.getUsedStorageSize()
         })
             .catch(error => alert("ERROR: " + error))
     }
+    getUsedStorageSize = () => {
+        alert('get used storage size')
+        const { authToken } = this.props;
 
+        let fetchParams: FetchParams = {
+            url: '/files/?calcUsedSize=1',
+            token: authToken,
+            method: 'GET',
+
+            actionDescription: "get used storage size"
+        }
+
+        makeFetch<any>(fetchParams).then(jsonRes => {
+            console.log(jsonRes)
+            // if (jsonRes['usedStorageSize'] == null)
+            //     this.setState({usedStorageSize: 0})
+            //else this.setState({usedStorageSize: jsonRes['usedStorageSize']})
+            this.setState({usedStorageSize: jsonRes['usedStorageSize']})
+        }).catch(error => alert("ERROR: " + error))
+    }
     //^
 
 
     //Request functions:
+    getAllUserClusters = () => {
+        alert('get user clusters')
+        const { authToken } = this.props;
+        if (authToken === '') {
+            return
+        }
+
+        let fetchParams: FetchParams = {
+            url: '/clusters',
+            token: authToken,
+            method: 'GET',
+            actionDescription: "get all user's clusters"
+        }
+
+        makeFetch<any>(fetchParams).then(jsonRes => {
+            console.log(jsonRes)
+
+            this.setState({clusters: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], name: item['name']['S']}})})
+        }).catch(error => alert("ERROR: " + error))
+    }
+
     createCluster = () => {
 
         let clusterData: Cluster = {
@@ -181,25 +222,6 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
             this.getAllUserClusters()
-        }).catch(error => alert("ERROR: " + error))
-    }
-    getAllUserClusters = () => {
-        const { authToken } = this.props;
-        if (authToken === '') {
-            return
-        }
-
-        let fetchParams: FetchParams = {
-            url: '/clusters',
-            token: authToken,
-            method: 'GET',
-            actionDescription: "get all user's clusters"
-        }
-
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-
-            this.setState({clusters: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], name: item['name']['S']}})})
         }).catch(error => alert("ERROR: " + error))
     }
     deleteCluster = (clusterId: number | undefined) => {
@@ -267,26 +289,6 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         }).catch(error => alert("ERROR: " + error))
     }
 
-    getUsedStorageSize = () => {
-
-        const { authToken } = this.props;
-
-        let fetchParams: FetchParams = {
-            url: '/files/?calcUsedSize=1',
-            token: authToken,
-            method: 'GET',
-
-            actionDescription: "get used storage size"
-        }
-
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            // if (jsonRes['usedStorageSize'] == null)
-            //     this.setState({usedStorageSize: 0})
-            //else this.setState({usedStorageSize: jsonRes['usedStorageSize']})
-            this.setState({usedStorageSize: jsonRes['usedStorageSize']})
-        }).catch(error => alert("ERROR: " + error))
-    }
     makeAdminQuery = () => {
         if (this.state.queryToDB === '') {
             return
