@@ -10,14 +10,10 @@ import * as storeService from '../../../store/demo/store.service'
 import {DemoActions} from '../../../store/demo/types';
 import {Table} from "react-bootstrap";
 import {LinkContainer} from "react-router-bootstrap";
-import {Cluster, FileMetadata} from "../../../interfaces/databaseTables";
-import config from "../../../config";
-import * as AWS from "aws-sdk";
-import {AWSError} from "aws-sdk";
+import {Cluster} from "../../../interfaces/databaseTables";
 import {History} from "history";
 import CognitoService from "../../../services/cognito.service";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
-import {DeleteObjectOutput} from "aws-sdk/clients/s3";
 import * as tokensService from "../../../store/demo/tokens.service";
 import Test from "../Test";
 
@@ -55,7 +51,6 @@ interface IState {
     usedStorageSize: number | string
 }
 
-
 class PersonalPage extends React.Component<ReduxType, IState> {
     public state: IState = {
         newClusterName: "",
@@ -67,20 +62,9 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         usedStorageSize: 0
     }
 
-
-    // constructor(props: ReduxType) {
-    //     super(props);
-    //     //alert(props)
-    // }
-
-
     async componentDidMount() {
         await this.getAuthToken()
         this.getUserRole()
-        // await this.props.loadStore()
-        // await decodeIdToken(this.props.idToken).then(userid => this.setState({userId: userid}))
-
-        // await this.getUserRole()
     }
 
     //Initialization functions
@@ -92,52 +76,30 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         //var id_token = id_token_param.substring(id_token_param.indexOf('=')+1);//only token after '='(...)
         //id_token = id_token.split('&')[0]
 
-
         //hash:
         let token_params = window.location.hash.slice(1);
         let token_params_arr = token_params.split('&');
         let access_token = token_params_arr[0].substring(token_params_arr[0].indexOf('=')+1)
 
         if (access_token === ''){
-            //alert('loading store')
             await this.props.loadStore()          //ASYNC ACTION!!!!! (If you remove await - further code in this function wont have the token loaded from the store!!
-            // alert("!!!! AFTER LOADING: " + this.props.authToken)
-             //IGNORED (Home/PersonalPage/=> refresh)
         } else {
             await this.props.setAuthToken(access_token)
             await this.props.saveStore()    //ASYNC ACTION!!!!! (If you remove await - further code in this function wont have the new saved store with the token!!
-            // alert('set new auth token')
-            // this.getUserRole(access_token)
         }
-
-
-        //var token = id_token_param.substring(id_token_param.indexOf('#')+1);
-        //alert(token); str.split('+')[0]
-        // const fetchParams: FetchParams = {
-        //     url: config.AppConfig.endpoint + '/test',
-        //     token: access_token,
-        //     method: 'POST',
-        //     body: '',
-        //
-        //     actionDescription: "test request to api gateway"
-        // }
-        //
-        // makeFetch<any>(fetchParams).then(jsonRes => {
-        //     console.log(jsonRes)
-        // }).catch(error => alert("ERROR: " + error))
     }
     getUserRole = () => {
         const { authToken } = this.props
-        //alert(this.props.authToken)
+
         if (authToken === '') {
             alert('token is empty')
             return
         }
+
         let clusterData: Cluster = {
             name: this.state.newClusterName,
             ownerUserId: this.state.userId,
         }
-
 
         let fetchParams: FetchParams = {
             //url: '/users/find?userId=' + this.state.userId,
@@ -159,11 +121,10 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             .catch(error => alert("ERROR: " + error))
     }
     getUsedStorageSize = () => {
-        alert('get used storage size')
         const { authToken } = this.props;
 
         let fetchParams: FetchParams = {
-            url: '/files/?calcUsedSize=1',
+            url: '/files/?calcUsedSize=true',
             token: authToken,
             method: 'GET',
 
@@ -183,7 +144,6 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
     //Request functions:
     getAllUserClusters = () => {
-        alert('get user clusters')
         const { authToken } = this.props;
         if (authToken === '') {
             return
@@ -202,7 +162,6 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             this.setState({clusters: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], name: item['name']['S']}})})
         }).catch(error => alert("ERROR: " + error))
     }
-
     createCluster = () => {
 
         let clusterData: Cluster = {
@@ -263,8 +222,6 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             .then(promiseOutput => {
                 if (promiseOutput.success) {
                     console.log("Cognito user successfully deleted: " + promiseOutput.msg)
-                    // @ts-ignore
-                    //userCognitoId = promiseOutput.msg.UserSub
                 } else {
                     console.log("ERROR WITH DELETING COGNITO USER: " + promiseOutput.msg)
                     return

@@ -1,6 +1,7 @@
 import boto3
 import json
 from boto3.dynamodb.conditions import Attr, Key
+from botocore.exceptions import ClientError
 
 def handler(event, context):
     index_name = "Data-index"
@@ -23,13 +24,13 @@ def handler(event, context):
             }
             user_permissions = query(query_params)
             with table.batch_writer() as batch:
-                for item in user_permissions['Items']:
-                    batch.delete_item(Key={'PK': item['PK'], 'SK': item['SK']})
-
+                for item in user_permissions:
+                    batch.delete_item(Key={'ID': item['ID']['S'], 'SK': item['SK']['S']})
             #Delete the user
             db_response = table.delete_item(
                 Key={
-                    'ID': requester_cognito_user_id
+                    'ID': requester_cognito_user_id,
+                    'SK': 'USER'
                 }
             )
             response_body = {

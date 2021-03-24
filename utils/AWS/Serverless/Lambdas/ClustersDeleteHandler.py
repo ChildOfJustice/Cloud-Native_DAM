@@ -10,14 +10,13 @@ def handler(event, context):
     requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
     cluster_id = None
     try:
-        cluster_id = json.loads(event.get('body')).get('clusterId')
+        cluster_id = json.loads(event.get('body')).get('clusterID')
     except ValueError as e:
-        print(e)
         response_body = {
             'message': 'cannot delete cluster with id null'
         }
         response = {
-            'statusCode': 500,
+            'statusCode': 400,
             'body': json.dumps(response_body),
         }
         return response
@@ -26,7 +25,6 @@ def handler(event, context):
         #DELETE delete the cluster
         try:
             # Delete all Cluster-File records
-            print('trying to delete cluster-files')
             query_params = {
                 'TableName': 'CloudNativeDAM_DB',
                 'ExpressionAttributeNames': {'#C_ID': 'ID', '#F_ID': 'SK'},
@@ -34,11 +32,9 @@ def handler(event, context):
                 'KeyConditionExpression': '#C_ID = :Cid AND begins_with(#F_ID, :Fid)'
             }
             cluster_files = query(query_params)
-            print(cluster_files)
             with table.batch_writer() as batch:
                 for item in cluster_files:
-                    batch.delete_item(Key={'ID': item['ID'], 'SK': item['SK']})
-            print('DELETED cluster-files')
+                    batch.delete_item(Key={'ID': item['ID']['S'], 'SK': item['SK']['S']})
             # Delete all Permissions for the cluster
             query_params = {
                 'TableName': 'CloudNativeDAM_DB',
@@ -47,11 +43,9 @@ def handler(event, context):
                 'KeyConditionExpression': '#C_ID = :Cid AND begins_with(#P_ID, :Pid)'
             }
             cluster_permissions = query(query_params)
-            print(cluster_permissions)
             with table.batch_writer() as batch:
                 for item in cluster_permissions:
-                    batch.delete_item(Key={'ID': item['ID'], 'SK': item['SK']})
-            print('DELETED cluster permissions')
+                    batch.delete_item(Key={'ID': item['ID']['S'], 'SK': item['SK']['S']})
             #Delete the cluster
             db_response = table.delete_item(
                 Key={
@@ -59,7 +53,6 @@ def handler(event, context):
                     'SK': cluster_id
                 }
             )
-            print(db_response)
             response_body = {
                 'message': 'Cluster deleted successfully'
             }

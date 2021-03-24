@@ -9,7 +9,7 @@ def handler(event, context):
     index_name = "Data-index"
 
     requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
-    print(event)
+    
     if(event.get('routeKey').startswith('POST') and json.loads(event.get('body')).get('clusterId') is None):
         #POST CREATE A NEW CLUSTER
         new_cluster_id = str(uuid.uuid4())

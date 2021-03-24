@@ -93,7 +93,8 @@ def create_new_user(table, jwt_claims):
     db_response = table.put_item(
         Item={
             'ID': jwt_claims.get('sub'),
-            'SK': jwt_claims.get('username'),
+            'SK': 'USER',
+            'Data': jwt_claims.get('username'),
             'role': 'ORDINARY_USER'
         }
     )
