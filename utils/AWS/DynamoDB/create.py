@@ -33,6 +33,18 @@ if table_name not in existing_tables:
                 },
                 "Projection": {"ProjectionType": "ALL"},
             },
+            {
+                "IndexName": "File-Clusters-index",
+                "KeySchema": [
+                    {"AttributeName": "SK", "KeyType": "HASH"},
+                    {"AttributeName": "ID", "KeyType": "RANGE"},
+                ],
+                "ProvisionedThroughput": {
+                    'ReadCapacityUnits': 1,
+                    'WriteCapacityUnits': 1
+                },
+                "Projection": {"ProjectionType": "ALL"},
+            },
         ],
         BillingMode="PROVISIONED",#PAY_PER_REQUEST",
         ProvisionedThroughput={

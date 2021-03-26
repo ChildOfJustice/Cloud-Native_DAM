@@ -69,7 +69,7 @@ def handler(event, context):
         else:
             # GET the one cluster by its ID
             try:
-                cluster_id = event.get('queryStringParameters').get('clusterID')
+                cluster_id = event.get('queryStringParameters').get('clusterId')
                 if(cluster_id == '' or (cluster_id is None)):
                     raise ValueError('Cluster id cannot be empty')
 
@@ -82,7 +82,8 @@ def handler(event, context):
                 }
                 items = query(query_params)
                 response_body = {
-                    'items': items# TODO
+                    'cluster': items,  # TODO
+                    'youAreTheOwner': (items[0]['Data']['S'] == requester_cognito_user_id)
                 }
 
                 response = {
