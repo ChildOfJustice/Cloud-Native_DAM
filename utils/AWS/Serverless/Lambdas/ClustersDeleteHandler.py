@@ -10,7 +10,7 @@ def handler(event, context):
     requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
     cluster_id = None
     try:
-        cluster_id = json.loads(event.get('body')).get('clusterID')
+        cluster_id = json.loads(event.get('body')).get('clusterId')
     except ValueError as e:
         response_body = {
             'message': 'cannot delete cluster with id null'
