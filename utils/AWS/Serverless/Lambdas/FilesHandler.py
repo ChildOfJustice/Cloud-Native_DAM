@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 def handler(event, context):
     table = boto3.resource("dynamodb").Table("CloudNativeDAM_DB")
     index_name = "Data-index"
+    index_name2 = "File-Clusters-index"
 
     requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
     
@@ -74,10 +75,8 @@ def handler(event, context):
             #         'body': json.dumps(response_body),
             #     }
             #     return response
-
-
+        
         else:
-            
             try:
                 if(event.get('queryStringParameters').get('calcUsedSize') == 'true'):
                     # GET Calc used storage size
@@ -105,6 +104,39 @@ def handler(event, context):
                     }
                     return response
                 
+                if(event.get('queryStringParameters').get('clusterId') is not None):
+                    # Return all files metadata for the files in the cluster
+                    files_metadata = []
+                    query_params = {
+                        'TableName': 'CloudNativeDAM_DB', 
+                        'ProjectionExpression': "SK",                       
+                        'ExpressionAttributeNames': {'#C_ID': 'ID', '#SK': 'SK'},
+                        'ExpressionAttributeValues': {':Cid': {'S': event.get('queryStringParameters').get('clusterId')},':sk': {'S': 'FILE#'}},
+                        'KeyConditionExpression': '#C_ID = :Cid AND begins_with(#SK, :sk)'
+                    }
+                    items = query(query_params)
+                    
+                    for item in items:
+                        query_params = {
+                            'TableName': 'CloudNativeDAM_DB',                      
+                            'ExpressionAttributeNames': {'#F_ID': 'ID', '#SK': 'SK'},
+                            'ExpressionAttributeValues': {':Fid': {'S': item['SK']['S']},':sk': {'S': item['SK']['S']}},
+                            'KeyConditionExpression': '#F_ID = :Fid AND #SK = :sk'
+                        }
+                        file_metadata = query(query_params)[0]
+                        files_metadata.append(file_metadata)
+
+                    response_body = {
+                        'items': files_metadata
+                    }
+
+                    response = {
+                        'statusCode': 200,
+                        'body': json.dumps(response_body),
+                    }
+                    return response
+
+
             except (ClientError, ValueError) as e:
                 print(e)
                 err_msg = ''
@@ -120,7 +152,88 @@ def handler(event, context):
                     'body': json.dumps(response_body),
                 }
                 return response
+    if(event.get('routeKey').startswith('DELETE')):
+        
+        file_id = json.loads(event.get('body')).get('fileId')
 
+        if(event.get('queryStringParameters').get('action') == 'removeFromCluster'):
+            cluster_id = json.loads(event.get('body')).get('clusterId')
+            try:
+                print(cluster_id)
+                print(file_id)
+                db_response = table.delete_item(
+                    Key={
+                        'ID': cluster_id,
+                        'SK': file_id
+                    }
+                )
+                response_body = {
+                    'message': 'File removed from the cluster successfully'
+                }
+                response = {
+                    'statusCode': 200,
+                    'body': json.dumps(response_body),
+                }
+                return response
+            except ClientError as e:
+                print(e)
+                response_body = {
+                    'message': e.response['Error']['Code']
+                }
+                response = {
+                    'statusCode': 500,
+                    'body': json.dumps(response_body),
+                }
+                return response
+        else:
+            #DELETE the file
+            try:
+                # Delete all Cluster-File records
+                query_params = {
+                    'TableName': 'CloudNativeDAM_DB',
+                    'IndexName': index_name2,
+                    'ExpressionAttributeNames': {'#C_ID': 'ID', '#F_ID': 'SK'},
+                    'ExpressionAttributeValues': {':Cid': {'S': 'CLUSTER#'},':Fid': {'S': file_id}},
+                    'KeyConditionExpression': '#F_ID = :Fid AND begins_with(#C_ID, :Cid)'
+                }
+                file_clusters = query(query_params)
+                with table.batch_writer() as batch:
+                    for item in file_clusters:
+                        batch.delete_item(Key={'ID': item['ID']['S'], 'SK': item['SK']['S']})
+
+                #Delete the file
+                db_response = table.delete_item(
+                    Key={
+                        'ID': file_id,
+                        'SK': file_id
+                    }
+                )
+                response_body = {
+                    'message': 'File deleted successfully'
+                }
+                response = {
+                    'statusCode': 200,
+                    'body': json.dumps(response_body),
+                }
+                return response
+            except ClientError as e:
+                print(e)
+                response_body = {
+                    'message': e.response['Error']['Code']
+                }
+                response = {
+                    'statusCode': 500,
+                    'body': json.dumps(response_body),
+                }
+                return response
+    response_body = {
+        'message': 'no such operation available'
+    }
+    response = {
+        'statusCode': 400,
+        'body': json.dumps(response_body),
+    }
+    return response
 
 def query(params):
     dynamodb = boto3.client('dynamodb')

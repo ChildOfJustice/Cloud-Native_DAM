@@ -13,6 +13,7 @@ export interface FileMetadata {
 export interface File_ClusterSub {
     fileId: number
     clusterId: string
+    name?: string
 }
 
 export interface Cluster {
@@ -26,9 +27,10 @@ export interface Role {
     role: string
 }
 
-export interface CoUser {
-    coUserId: string
+export interface Permission {
+    principalUserId?: string
     clusterId: number
-    permissions: string
-    permissionGiverUserId: string
+    permissions?: string
+    permissionGiverUserId?: string
+    permissionId?: string
 }
