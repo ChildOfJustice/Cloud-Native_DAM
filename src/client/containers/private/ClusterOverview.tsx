@@ -304,50 +304,34 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
             const params = {  Bucket: config.AWS.S3.bucketName, Key: S3uniqueName };
 
-            let error = -1 //TODO CHECK THE ERROR
-            let localState = this.state
-            localState.S3DeleteTransactionError = false
+            // let error = -1 //TODO CHECK THE ERROR
+            // let localState = this.state
+            // localState.S3DeleteTransactionError = false
+            var localThis = this
             s3.deleteObject(params, function(err, data) {
                 if (err) {
                     alert("Cannot delete this file from S3 bucket!")
                     console.log(err, err.stack);  // error
-                    error = 1
-                    localState.S3DeleteTransactionError = true
+                    // error = 1
+                    // localState.S3DeleteTransactionError = true
                 }
                 else {
-                    error = 0
+                    // error = 0
                     console.log();
                     alert("File has been deleted from the cloud.")
-                    localState.S3DeleteTransactionError = false
+                    // localState.S3DeleteTransactionError = false
+                    localThis.deleteFilePermanently(fileId)
                 }
             })
-            while(error === -1){
-                //TODO BADDDDDDDDRRRR
-                //waiting for the response
-            }
-            alert(error)
-            alert(this.state.S3DeleteTransactionError)
-            if(error === 0){
-                const { authToken } = this.props;
-
-                let fileData = {
-                    fileId: fileId
-                }
-                const fetchParams: FetchParams = {
-                    url: '/files',
-                    token: authToken,
-                    method: 'DELETE',
-                    body: fileData,
-
-                    actionDescription: "delete file and its metadata"
-                }
-
-                makeFetch<string>(fetchParams).then(jsonRes => {
-                    console.log(jsonRes)
-                    console.log("Successfully deleted the file")
-
-                }).catch(error => alert("ERROR: " + error))
-            }
+            // while(error === -1){
+            //     //TODO BADDDDDDDDRRRR
+            //     //waiting for the response
+            // }
+            // alert(error)
+            // alert(this.state.S3DeleteTransactionError)
+            // if(error === 0){
+            //
+            // }
         } else {
             //Just delete the file-cluster record for this file
             // @ts-ignore
@@ -374,6 +358,27 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
             }).catch(error => alert("ERROR: " + error))
         }
+    }
+    deleteFilePermanently = (fileId: number) => {
+        const { authToken } = this.props;
+
+        let fileData = {
+            fileId: fileId
+        }
+        const fetchParams: FetchParams = {
+            url: '/files',
+            token: authToken,
+            method: 'DELETE',
+            body: fileData,
+
+            actionDescription: "delete file and its metadata"
+        }
+
+        makeFetch<string>(fetchParams).then(jsonRes => {
+            console.log(jsonRes)
+            console.log("Successfully deleted the file")
+
+        }).catch(error => alert("ERROR: " + error))
     }
     deleteCoUser = (couserPermission: Permission) => {
 
