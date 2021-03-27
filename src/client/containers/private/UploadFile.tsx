@@ -8,10 +8,10 @@ import {IRootState} from "../../../store";
 import {Dispatch} from "redux";
 import {DemoActions} from "../../../store/demo/types";
 import * as storeService from "../../../store/demo/store.service";
-import {decodeIdToken} from "../../../interfaces/user";
 import {connect} from "react-redux";
 import Button from "react-bootstrap/Button";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
+import {FileMetadata} from "../../../interfaces/databaseTables";
 
 ///CONFIG
 //AZURE:
@@ -52,14 +52,8 @@ class UploadFile extends React.Component<ReduxType, IState> {
         canUpload: false
     }
 
-    constructor(props: ReduxType) {
-        super(props);
-    }
-
     async componentDidMount() {
         await this.props.loadStore()
-
-        await decodeIdToken(this.props.idToken).then(userid => this.setState({userId: userid}))
     }
 
     async checkStorageSizeLimitation(fileSize: number) {
@@ -69,82 +63,47 @@ class UploadFile extends React.Component<ReduxType, IState> {
             return
         }
 
-
-        const {authToken, idToken, loading} = this.props;
-
-
-        let clusterOwnerUserId = ""
+        const { authToken } = this.props;
 
         let fetchParams: FetchParams = {
-            // @ts-ignore
-            url: '/clusters?clusterId='+this.props.match.params.clusterId,
-            //authToken: authToken,
-            //idToken: idToken,
-            token: "",
+            url: '/files/?calcUsedSize=true',
+            token: authToken,
             method: 'GET',
-            body: null,
-
-            actionDescription: "get cluster to check available storage size"
-        }
-
-        await makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            clusterOwnerUserId = jsonRes[0].ownerUserId
-        }).catch(error => alert("ERROR: " + error))
-
-
-
-
-        fetchParams = {
-            url: '/files/metadata/calcUsedSize?ownerUserId='+clusterOwnerUserId,
-            //authToken: authToken,
-            //idToken: idToken,
-            token: "",
-            method: 'GET',
-            body: null,
 
             actionDescription: "get used storage size"
         }
 
-        await makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            if(jsonRes[0].usedStorageSize == null) {
-                //alert("There is no info about your used storage size. Please, contact the administrator.")
-                this.setState({canUpload: true})
-            }
-            else {
-                //alert("SIZE IS: " + (fileSize + jsonRes[0].usedStorageSize))
-                if(fileSize + jsonRes[0].usedStorageSize < config.AppConfig.maxUserStorageSize_MB)
-                    this.setState({canUpload: true})
-                else
-                    this.setState({canUpload: false})
-            }
-        }).catch(error => alert("ERROR: " + error))
+        let jsonRes = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+
+        if(fileSize + parseFloat(jsonRes['usedStorageSize']) < config.AppConfig.maxUserStorageSize_MB)
+            this.setState({canUpload: true})
+        else
+            this.setState({canUpload: false})
     }
 
      uploadFile = () => {
-        var cloudCombobox = document.getElementById("cloudCombobox");
+        let cloudCombobox = document.getElementById("cloudCombobox");
         // @ts-ignore
-        var itemValue = cloudCombobox.options[cloudCombobox.selectedIndex].value;
+        let itemValue = cloudCombobox.options[cloudCombobox.selectedIndex].value;
 
 
         // @ts-ignore
-        var defaultTagKey1 = document.getElementById('defaultTagKey1').value;
+        let defaultTagKey1 = document.getElementById('defaultTagKey1').value;
         // @ts-ignore
-        var defaultTagValue1 = document.getElementById('defaultTagValue1').value;
+        let defaultTagValue1 = document.getElementById('defaultTagValue1').value;
         // @ts-ignore
-        var defaultTagKey2 = document.getElementById('defaultTagKey2').value;
+        let defaultTagKey2 = document.getElementById('defaultTagKey2').value;
         // @ts-ignore
-        var defaultTagValue2 = document.getElementById('defaultTagValue2').value;
+        let defaultTagValue2 = document.getElementById('defaultTagValue2').value;
         // @ts-ignore
-        var defaultTagKey3 = document.getElementById('defaultTagKey3').value;
+        let defaultTagKey3 = document.getElementById('defaultTagKey3').value;
         // @ts-ignore
-        var defaultTagValue3 = document.getElementById('defaultTagValue3').value;
+        let defaultTagValue3 = document.getElementById('defaultTagValue3').value;
 
 
-        var otherTags: any[][] = [];
-        var userTagsKeys: string[] = [];
-        var userTagsValues: string[] = [];
+        let otherTags: any[][] = [];
+        let userTagsKeys: string[] = [];
+        let userTagsValues: string[] = [];
         otherTags.push([defaultTagKey1, defaultTagValue1]);
         otherTags.push([defaultTagKey2, defaultTagValue2]);
         otherTags.push([defaultTagKey3, defaultTagValue3]);
@@ -154,7 +113,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
         for (let i = 0; i < this.tagIndex; i++) {
             // @ts-ignore
             var element = [document.getElementById('tagKey'+(i+1)).value, document.getElementById('tagValue'+(i+1)).value];
-            if(element[0] != ""){
+            if(element[0] !== ""){
                 userTagsKeys.push(element[0])
                 userTagsValues.push(element[1])
                 otherTags.push(element);
@@ -174,21 +133,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
         otherTags.sort( compare );
 
 
-        if(itemValue == "AWS"){
-
-
-            AWS.config.region = config.AWS.region; // Region
-            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-                IdentityPoolId: config.AWS.IdentityPool.IdentityPoolId,
-            });
-
-            var s3 = new AWS.S3({
-                apiVersion: '2006-03-01',
-                params: {Bucket: config.AWS.S3.bucketName}
-            });
-
-
-
+        if(itemValue === "AWS"){
             // @ts-ignore
             var files = document.getElementById('fileToUpload').files;
             var file = files[0];
@@ -197,8 +142,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
             }
 
 
-            //SEND Metadata TO DB
-            const metadata = {
+            var metadata: FileMetadata = {
                 id: null,
                 name: file.name,
                 // @ts-ignore
@@ -213,6 +157,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
                 clusterId: this.props.match.params.clusterId
             };
 
+
             this.checkStorageSizeLimitation(metadata.sizeOfFile_MB).then( () => {
 
                 if (!this.state.canUpload) {
@@ -221,63 +166,55 @@ class UploadFile extends React.Component<ReduxType, IState> {
                     return
                 }
 
-                const {authToken, idToken, loading} = this.props;
+                //AWS initialization:
+                AWS.config.region = config.AWS.region; // Region
+                AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                    IdentityPoolId: config.AWS.IdentityPool.IdentityPoolId,
+                });
 
-                const fetchParams: FetchParams = {
-                    url: '/files/metadata/create',
-                    //authToken: authToken,
-                    //idToken: idToken,
-                    token: "",
-                    method: 'POST',
-                    body: metadata,
+                //TODO check whether if it is crucial?
+                // var s3 = new AWS.S3({
+                //     apiVersion: '2006-03-01',
+                //     params: {Bucket: config.AWS.S3.bucketName}
+                // });
+                //^
 
-                    actionDescription: "create file metadata"
+                const params = {
+                    Bucket: config.AWS.S3.bucketName,
+                    Key: metadata.S3uniqueName,
+                    Body: file,
+                };
+                const canonicalTagArray = [];
+                for (let i = 0; i < otherTags.length; i++) {
+                    var element2 =  {Key: otherTags[i][0], Value: otherTags[i][1]};
+                    canonicalTagArray.push(element2);
+                }
+                if(canonicalTagArray.length === 0){
+                    var upload = new AWS.S3.ManagedUpload({
+                        params: params
+                    });
+                } else{
+                    var upload = new AWS.S3.ManagedUpload({
+                        params: params,
+                        tags: canonicalTagArray
+                    });
                 }
 
-                makeFetch<any>(fetchParams).then(fileInfo => {
-                    const params = {
-                        Bucket: config.AWS.S3.bucketName,
-                        Key: metadata.S3uniqueName,
-                        Body: file,
-                    };
+                var localThis = this
+                var promise = upload.promise();
+                promise.then(
+                    function(data) {
+                        alert("File uploaded successfully.");
+                        window.close();
 
-
-                    const canonicalTagArray = [];
-                    for (let i = 0; i < otherTags.length; i++) {
-                        var element2 =  {Key: otherTags[i][0], Value: otherTags[i][1]};
-                        canonicalTagArray.push(element2);
+                        localThis.createFileClusterSubRecord(metadata)
+                    },
+                    function(err) {
+                        console.log(err.message);
+                        return alert("There was an error: " + err.message);
                     }
-
-                    if(canonicalTagArray.length == 0){
-                        var upload = new AWS.S3.ManagedUpload({
-                            params: params
-                        });
-                    } else{
-                        var upload = new AWS.S3.ManagedUpload({
-                            params: params,
-                            tags: canonicalTagArray
-                        });
-                    }
-
-                    var promise = upload.promise();
-
-                    promise.then(
-                        function(data) {
-                            alert("File uploaded successfully.");
-                            window.close();
-                        },
-                        function(err) {
-                            console.log(err.message);
-                            return alert("There was an error: " + err.message);
-                        }
-                    );
-
-                }).catch(error => alert("ERROR: " + error))
-
-
-                }
-            )
-
+                );
+            })
         }
         // if(itemValue == "Azure"){
         //     alert("This cloud provider is not supported for now")
@@ -353,12 +290,28 @@ class UploadFile extends React.Component<ReduxType, IState> {
         // }
     }
 
+    createFileClusterSubRecord = (metadata: FileMetadata) => {
+        const { authToken } = this.props;
+
+        const fetchParams: FetchParams = {
+            url: '/files',
+            token: authToken,
+            method: 'POST',
+            body: metadata,
+
+            actionDescription: "create file metadata"
+        }
+
+        makeFetch<any>(fetchParams).then(jsonRes => {
+            console.log(jsonRes)
+        }).catch(error => alert("ERROR: " + error))
+    }
+
     addTag = () => {
         this.tagIndex += 1;
         var tagTable = document.getElementById('tableForTags');
         // @ts-ignore
         tagTable.innerHTML += '<tr><td><input id="tagKey' + this.tagIndex + '" type="text" size="40"></td><td><input id="tagValue' + this.tagIndex + '" type="text" size="40"></td></tr>';
-
     }
 
     render() {

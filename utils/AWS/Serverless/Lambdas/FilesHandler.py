@@ -11,29 +11,51 @@ def handler(event, context):
 
     requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
     
-    if(event.get('routeKey').startswith('POST') and json.loads(event.get('body')).get('clusterId') is not None):
-        ...
-        # #POST add a new file to cluster
-        # new_cluster_id = str(uuid.uuid4())
-        # try:
-        #     db_response = table.put_item(
-        #         Item={
-        #             'ID': 'CLUSTER#' + new_cluster_id,
-        #             'SK': 'CLUSTER#' + new_cluster_id,
-        #             'Data': requester_cognito_user_id,
-        #             'name': json.loads(event.get('body')).get('name')
-        #         }
-        #     )
-        # except ClientError as e:
-        #     print(e)
-        #     response_body = {
-        #         'message': e.response['Error']['Code']
-        #     }
-        #     response = {
-        #         'statusCode': 500,
-        #         'body': json.dumps(response_body),
-        #     }
-        #     return response
+    if(event.get('routeKey').startswith('POST')):
+        #POST add a new file to cluster
+        new_file_id = str(uuid.uuid4())
+        try:
+            cluster_id = json.loads(event.get('body')).get('clusterId')
+            if(cluster_id == '' or (cluster_id is None)):
+                raise ValueError('Cluster id cannot be empty')
+        except ValueError as e:
+            print(e)
+            response_body = {
+                'message': str(e)
+            }
+            response = {
+                'statusCode': 400,
+                'body': json.dumps(response_body),
+            }
+            return response
+        
+        
+        try:
+            db_response = table.put_item(
+                Item=json.loads(json.dumps({
+                    'ID': 'FILE#' + new_file_id,
+                    'SK': 'FILE#' + new_file_id,
+                    'Data': requester_cognito_user_id,
+                    'Name': json.loads(event.get('body')).get('name'),
+                    'S3uniqueName': json.loads(event.get('body')).get('S3uniqueName'),
+                    'Cloud': json.loads(event.get('body')).get('cloud'),
+                    'OwnedBy': json.loads(event.get('body')).get('ownedBy'),
+                    'UploadedBy': json.loads(event.get('body')).get('uploadedBy'),
+                    'SizeOfFile_MB': float(json.loads(event.get('body')).get('sizeOfFile_MB')),
+                    'TagsKeys': json.loads(event.get('body')).get('tagsKeys'),
+                    'TagsValues': json.loads(event.get('body')).get('tagsValues')
+                }), parse_float=Decimal)
+            )
+        except ClientError as e:
+            print(e)
+            response_body = {
+                'message': e.response['Error']['Code']
+            }
+            response = {
+                'statusCode': 500,
+                'body': json.dumps(response_body),
+            }
+            return response
     if(event.get('routeKey').startswith('GET')):
         if(event.get('queryStringParameters') is None):
             response_body = {
