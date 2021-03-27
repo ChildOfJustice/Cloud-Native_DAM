@@ -278,9 +278,13 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         //
         // }
     }
-    deleteFile = async (S3uniqueName:string, fileId: number) => {
+    deleteFile = async (S3uniqueName:string, fileId?: number) => {
         if(this.state.permissions[2] !== '1') {
             alert("You don't have permissions to delete any files!")
+            return
+        }
+        if(fileId === undefined){
+            alert("file ID cannot be undefined!")
             return
         }
 
@@ -359,7 +363,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             }).catch(error => alert("ERROR: " + error))
         }
     }
-    deleteFilePermanently = (fileId: number) => {
+    deleteFilePermanently = (fileId?: number) => {
         const { authToken } = this.props;
 
         let fileData = {
