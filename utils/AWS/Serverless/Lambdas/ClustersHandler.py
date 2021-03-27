@@ -19,7 +19,7 @@ def handler(event, context):
                     'ID': 'CLUSTER#' + new_cluster_id,
                     'SK': 'CLUSTER#' + new_cluster_id,
                     'Data': requester_cognito_user_id,
-                    'name': json.loads(event.get('body')).get('name')
+                    'Name': json.loads(event.get('body')).get('name')
                 }
             )
         except ClientError as e:
