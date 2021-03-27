@@ -278,7 +278,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         //
         // }
     }
-    deleteFile = async (S3uniqueName:string, fileId: number | null) => {
+    deleteFile = async (S3uniqueName:string, fileId: number) => {
         if(this.state.permissions[2] !== '1') {
             alert("You don't have permissions to delete any files!")
             return

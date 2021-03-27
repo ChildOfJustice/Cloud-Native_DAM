@@ -1,5 +1,5 @@
 export interface FileMetadata {
-    id: number | null
+    id?: number
     name: string
     S3uniqueName: string
     cloud: string
