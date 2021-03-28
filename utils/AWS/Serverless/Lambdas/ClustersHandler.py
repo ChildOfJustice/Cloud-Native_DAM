@@ -76,13 +76,13 @@ def handler(event, context):
                 query_params = {
                     'TableName': 'CloudNativeDAM_DB',
                     # 'IndexName': 'Data-index',
-                    'ExpressionAttributeNames': {'#ID': 'PK', '#SK': 'SK'},
+                    'ExpressionAttributeNames': {'#ID': 'ID', '#SK': 'SK'},
                     'ExpressionAttributeValues': {':id': {'S': cluster_id},':sk': {'S': cluster_id}},
                     'KeyConditionExpression': '#ID = :id AND #SK = :sk'
                 }
                 items = query(query_params)
                 response_body = {
-                    'cluster': items,  # TODO
+                    'cluster': items[0],  # TODO
                     'youAreTheOwner': (items[0]['Data']['S'] == requester_cognito_user_id)
                 }
 

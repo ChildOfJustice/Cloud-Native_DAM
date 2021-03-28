@@ -28,9 +28,11 @@ export interface Role {
 }
 
 export interface Permission {
-    principalUserId?: string
     clusterId: number
-    permissions?: string
-    permissionGiverUserId?: string
+    clusterName?: string
     permissionId?: string
+    principalUserId?: string
+    permissionGiverUserId?: string
+    permissions?: string
+    clusterOwnerUserName?: string
 }

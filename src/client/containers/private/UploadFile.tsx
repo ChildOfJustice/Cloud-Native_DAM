@@ -143,7 +143,6 @@ class UploadFile extends React.Component<ReduxType, IState> {
 
 
             var metadata: FileMetadata = {
-                id: null,
                 name: file.name,
                 // @ts-ignore
                 S3uniqueName: this.props.match.params.clusterId + "/" + uuidv4(),
@@ -154,7 +153,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
                 tagsKeys: userTagsKeys,
                 tagsValues: userTagsValues,
                 // @ts-ignore
-                clusterId: this.props.match.params.clusterId
+                clusterId: decodeURIComponent(this.props.match.params.clusterId)
             };
 
 
@@ -165,6 +164,12 @@ class UploadFile extends React.Component<ReduxType, IState> {
                     alert("You have acceded your storage limit. Please, buy some more!")
                     return
                 }
+
+
+                this.createFileClusterSubRecord(metadata)
+
+                return //TODO add S3
+
 
                 //AWS initialization:
                 AWS.config.region = config.AWS.region; // Region

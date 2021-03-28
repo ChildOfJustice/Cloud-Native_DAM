@@ -10,7 +10,6 @@
     "@types/node": "^12.20.4",
     "@types/react": "^17.0.2",
     "@types/react-dom": "^17.0.1",
-    "aws-amplify": "latest",
     "aws-sdk": "^2.851.0",
     "bootstrap": "^4.6.0",
     "core-js": "^3.9.0",

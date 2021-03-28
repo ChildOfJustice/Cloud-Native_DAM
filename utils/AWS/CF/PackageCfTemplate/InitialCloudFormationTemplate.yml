@@ -113,7 +113,15 @@ Resources:
       IntegrationType: 'AWS_PROXY'
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FilesLambdaFunction.Arn}/invocations
       PayloadFormatVersion: '2.0'
-
+  #////////Permissions
+  PermissionsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PermissionsLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
 
   #////////Admin
   AdminIntegration:
@@ -179,6 +187,19 @@ Resources:
         - /
         - - integrations
           - !Ref ClustersIntegration
+  ClustersGetProxyRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'clusters-get'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'GET /clusters/{proxy+}'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref ClustersIntegration
   ClustersGetRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -207,7 +228,7 @@ Resources:
           - !Ref ClustersDeleteIntegration
 
   #////////Files
-  FilesGetRoute:
+  FilesGetProxyRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref MyAPI
@@ -215,11 +236,97 @@ Resources:
       AuthorizerId: !Ref JWTAuthorizer
       OperationName: 'files-get'
       # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'GET /files/{proxy+}'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref FilesIntegration
+  FilesGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'files-get'
       RouteKey: 'GET /files'
       Target: !Join
         - /
         - - integrations
           - !Ref FilesIntegration
+  FilesPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'files-post'
+      RouteKey: 'POST /files'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref FilesIntegration
+  FilesDeleteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'files-delete'
+      RouteKey: 'DELETE /files'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref FilesIntegration
+
+  #////////Permissions
+  PermissionsPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'permissions-post'
+      RouteKey: 'POST /permissions'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref PermissionsIntegration
+  PermissionsGetProxyRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'permissions-get'
+      RouteKey: 'GET /permissions/{proxy+}'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref PermissionsIntegration
+  PermissionsGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'permissions-get'
+      RouteKey: 'GET /permissions'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref PermissionsIntegration
+  PermissionsDeleteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'permissions-delete'
+      RouteKey: 'DELETE /permissions'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref PermissionsIntegration
 
   #////////Admin
   AdminPostRoute:
@@ -317,6 +424,13 @@ Resources:
       Role: !GetAtt FunctionExecutionRole.Arn
       Handler: FilesHandler.handler
       CodeUri: ../../Serverless/Lambdas/FilesHandler.py
+  PermissionsLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: PermissionsHandler.handler
+      CodeUri: ../../Serverless/Lambdas/PermissionsHandler.py
   AdminLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -365,6 +479,13 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref FilesLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokePermissionsLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PermissionsLambdaFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
@@ -462,4 +583,4 @@ Outputs:
   SignupURL:
     Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}
   ApiEndpoint:
-    Value: MyAPI.ApiEndpoint
+    Value: !GetAtt MyAPI.ApiEndpoint

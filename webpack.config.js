@@ -5,8 +5,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require('path');
 
 module.exports = {
-    mode: 'development',
+    mode: 'production',
     entry: './src/index.tsx',
+    // externals: [{'aws-sdk': 'commonjs aws-sdk'}],
+    //externals: [nodeExternals( { whitelist: [ 'le-challenge-s3', 'le-store-s3' ]  } ) ],
     //devtool: 'source-map',//'inline-source-map'
     output: {
         filename: 'bundle.js',

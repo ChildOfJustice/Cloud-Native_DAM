@@ -96,9 +96,8 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             return
         }
 
-        let clusterData: Cluster = {
-            name: this.state.newClusterName,
-            ownerUserId: this.state.userId,
+        let clusterData = {
+            name: this.state.newClusterName
         }
 
         let fetchParams: FetchParams = {
@@ -159,7 +158,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
 
-            this.setState({clusters: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], name: item['name']['S']}})})
+            this.setState({clusters: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], name: item['Name']['S']}})})
         }).catch(error => alert("ERROR: " + error))
     }
     createCluster = () => {
@@ -219,31 +218,29 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         const cognito = new CognitoService();
         cognito.deleteUser(this.props.authToken)
-            .then(promiseOutput => {
-                if (promiseOutput.success) {
-                    console.log("Cognito user successfully deleted: " + promiseOutput.msg)
-                } else {
-                    console.log("ERROR WITH DELETING COGNITO USER: " + promiseOutput.msg)
-                    return
+        .then(promiseOutput => {
+            if (promiseOutput.success) {
+                console.log("Cognito user successfully deleted: " + promiseOutput.msg)
+                //delete user
+                const { authToken } = this.props;
+
+                let fetchParams: FetchParams = {
+                    url: '/users',
+                    token: authToken,
+                    method: 'DELETE',
+
+                    actionDescription: "delete the user"
                 }
-            });
 
-        //delete user
-        const { authToken } = this.props;
-
-        let fetchParams: FetchParams = {
-            url: '/users/delete',
-            token: authToken,
-            method: 'DELETE',
-            body: '',
-
-            actionDescription: "delete user"
-        }
-
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            this.props.history.push("/")
-        }).catch(error => alert("ERROR: " + error))
+                makeFetch<any>(fetchParams).then(jsonRes => {
+                    console.log(jsonRes)
+                    this.props.history.push("/")
+                }).catch(error => alert("ERROR: " + error))
+            } else {
+                console.log("ERROR WITH DELETING COGNITO USER: " + promiseOutput.msg)
+                return
+            }
+        });
     }
 
     makeAdminQuery = () => {
@@ -346,7 +343,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                     <tbody>
                     {this.state.clusters.map(
                         (cluster: Cluster) => <LinkContainer to={{
-                            pathname: '/private/clusters/' + cluster.clusterId,
+                            pathname: '/private/clusters/' + encodeURIComponent(cluster.clusterId!),
                         }}>
                             <tr onClick={this.handleTableClick}>
                                 <td key={counter}>

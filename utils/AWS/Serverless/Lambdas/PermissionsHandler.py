@@ -20,7 +20,9 @@ def handler(event, context):
                     'SK': 'PERMISSION#' + new_permission_id,
                     'Data': json.loads(event.get('body')).get('principalUserId'),
                     'GiverUserId': requester_cognito_user_id,
-                    'Permissions': json.loads(event.get('body')).get('permissions')
+                    'Permissions': json.loads(event.get('body')).get('permissions'),
+                    'ClusterOwnerUserName': event.get('requestContext').get('authorizer').get('jwt').get('claims').get('username'),
+                    'ClusterName': json.loads(event.get('body')).get('clusterName')
                 }
             )
             response_body = {
@@ -44,55 +46,85 @@ def handler(event, context):
     if(event.get('routeKey').startswith('GET')):
         action = event.get('queryStringParameters').get('action')
         cluster_id = None
-        try:
-            cluster_id = event.get('queryStringParameters').get('clusterId')
-            if(cluster_id == '' or (cluster_id is None)):
-                raise ValueError('Cluster id cannot be empty')
-        except ValueError as e:
-            print(e)
-            response_body = {
-                'message': str(e)
-            }
-            response = {
-                'statusCode': 400,
-                'body': json.dumps(response_body),
-            }
-            return response
-
+        # try:
+        cluster_id = event.get('queryStringParameters').get('clusterId')
+            # if(cluster_id == '' or (cluster_id is None)):
+            #     raise ValueError('Cluster id cannot be empty')
+        # except ValueError as e:
+        #     print(e)
+        #     response_body = {
+        #         'message': str(e)
+        #     }
+        #     response = {
+        #         'statusCode': 400,
+        #         'body': json.dumps(response_body),
+        #     }
+        #     return response
+        
         if(action == 'getUserPermissions'):
-            # GET the cluster permissions for this user
+            if(cluster_id == '' or (cluster_id is None)):
+                #Get all permissions for the user
+                query_params = {
+                    'TableName': 'CloudNativeDAM_DB',
+                    'IndexName': index_name,
+                    'ExpressionAttributeNames': {'#P_ID': 'SK', '#U_ID': 'Data'},
+                    'ExpressionAttributeValues': {':Pid': {'S': 'PERMISSION#'},':Uid': {'S': requester_cognito_user_id}},
+                    'KeyConditionExpression': '#U_ID = :Uid AND begins_with(#P_ID, :Pid)'
+                }
+                try:
+                    items = query(query_params)                    
+                    response_body = {
+                        'items': items
+                    }
 
-            query_params = {
-                'TableName': 'CloudNativeDAM_DB',
-                'IndexName': index_name,
-                'ExpressionAttributeNames': {'#P_ID': 'SK', '#U_ID': 'Data', '#C_ID': 'ID'},
-                'ExpressionAttributeValues': {':Pid': {'S': 'PERMISSION#'},':Uid': {'S': requester_cognito_user_id},':Cid': {'S': cluster_id}},
-                'KeyConditionExpression': '#U_ID = :Uid AND begins_with(#P_ID, :Pid)',
-                'FilterExpression': '#C_ID = :Cid'
-            }
-            
-            try:
-                items = query(query_params)
-                print(items)
-                response_body = {
-                    'permissions': items[0]['Permissions']['S']
-                }
+                    response = {
+                        'statusCode': 200,
+                        'body': json.dumps(response_body),
+                    }
+                    return response
+                except ClientError as e:
+                    print(e)
+                    response_body = {
+                        'message': e.response['Error']['Code']
+                    }
+                    response = {
+                        'statusCode': 500,
+                        'body': json.dumps(response_body),
+                    }
+                    return response
+            else:
+                # GET the cluster permissions for this user
 
-                response = {
-                    'statusCode': 200,
-                    'body': json.dumps(response_body),
+                query_params = {
+                    'TableName': 'CloudNativeDAM_DB',
+                    'IndexName': index_name,
+                    'ExpressionAttributeNames': {'#P_ID': 'SK', '#U_ID': 'Data', '#C_ID': 'ID'},
+                    'ExpressionAttributeValues': {':Pid': {'S': 'PERMISSION#'},':Uid': {'S': requester_cognito_user_id},':Cid': {'S': cluster_id}},
+                    'KeyConditionExpression': '#U_ID = :Uid AND begins_with(#P_ID, :Pid)',
+                    'FilterExpression': '#C_ID = :Cid'
                 }
-                return response
-            except ClientError as e:
-                print(e)
-                response_body = {
-                    'message': e.response['Error']['Code']
-                }
-                response = {
-                    'statusCode': 500,
-                    'body': json.dumps(response_body),
-                }
-                return response
+                
+                try:
+                    items = query(query_params)
+                    response_body = {
+                        'permissions': items[0]['Permissions']['S']
+                    }
+
+                    response = {
+                        'statusCode': 200,
+                        'body': json.dumps(response_body),
+                    }
+                    return response
+                except ClientError as e:
+                    print(e)
+                    response_body = {
+                        'message': e.response['Error']['Code']
+                    }
+                    response = {
+                        'statusCode': 500,
+                        'body': json.dumps(response_body),
+                    }
+                    return response
 
 
         elif(action == 'getAllCoUsers'):

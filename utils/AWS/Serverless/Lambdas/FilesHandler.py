@@ -3,11 +3,15 @@ import json
 import uuid
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
+from decimal import Decimal
 
 def handler(event, context):
     table = boto3.resource("dynamodb").Table("CloudNativeDAM_DB")
+    client = boto3.client('dynamodb')
+    table_name = "CloudNativeDAM_DB"
     index_name = "Data-index"
     index_name2 = "File-Clusters-index"
+    
 
     requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
     
@@ -19,7 +23,7 @@ def handler(event, context):
             if(cluster_id == '' or (cluster_id is None)):
                 raise ValueError('Cluster id cannot be empty')
         except ValueError as e:
-            print(e)
+            
             response_body = {
                 'message': str(e)
             }
@@ -29,23 +33,48 @@ def handler(event, context):
             }
             return response
         
-        
+        tag_keys_list = json.loads(event.get('body')).get('tagsKeys')
+        if(len(tag_keys_list) == 0):
+            tag_keys_list.append("")
+        tag_values_list = json.loads(event.get('body')).get('tagsValues')
+        if(len(tag_values_list) == 0):
+            tag_values_list.append("")
+        #print(tag_keys_list) WILL BE [""]
+        #print(json.loads(event.get('body')).get('tagsKeys').append("")) WILL BE None !!!!!!!!!!! (Python and web are the worst)
         try:
-            db_response = table.put_item(
-                Item=json.loads(json.dumps({
-                    'ID': 'FILE#' + new_file_id,
-                    'SK': 'FILE#' + new_file_id,
-                    'Data': requester_cognito_user_id,
-                    'Name': json.loads(event.get('body')).get('name'),
-                    'S3uniqueName': json.loads(event.get('body')).get('S3uniqueName'),
-                    'Cloud': json.loads(event.get('body')).get('cloud'),
-                    'OwnedBy': json.loads(event.get('body')).get('ownedBy'),
-                    'UploadedBy': json.loads(event.get('body')).get('uploadedBy'),
-                    'SizeOfFile_MB': float(json.loads(event.get('body')).get('sizeOfFile_MB')),
-                    'TagsKeys': json.loads(event.get('body')).get('tagsKeys'),
-                    'TagsValues': json.loads(event.get('body')).get('tagsValues')
-                }), parse_float=Decimal)
+            db_response = client.transact_write_items(
+                TransactItems=[
+                    {
+                        'Put': {
+                            'Item': json.loads(json.dumps({
+                                'ID': { 'S': 'FILE#' + new_file_id },
+                                'SK': { 'S': 'FILE#' + new_file_id },
+                                'Data': { 'S': requester_cognito_user_id },
+                                'Name': { 'S': json.loads(event.get('body')).get('name') },
+                                'S3uniqueName': { 'S': json.loads(event.get('body')).get('S3uniqueName') },
+                                'Cloud': { 'S': json.loads(event.get('body')).get('cloud') },
+                                'OwnedBy': { 'S': json.loads(event.get('body')).get('ownedBy') },
+                                'UploadedBy': { 'S': json.loads(event.get('body')).get('uploadedBy') },
+                                'SizeOfFile_MB': { 'N': str(float(json.loads(event.get('body')).get('sizeOfFile_MB'))) },
+                                'TagsKeys': { 'SS': tag_keys_list },
+                                'TagsValues': { 'SS': tag_values_list }
+                            }), parse_float=Decimal),
+                            'TableName': table_name
+                        }
+                    },
+                    {
+                        'Put': {
+                            'Item': {
+                                'ID': { 'S': cluster_id },
+                                'SK': { 'S': 'FILE#' + new_file_id },
+                                'FileName': { 'S': json.loads(event.get('body')).get('name') }                   
+                            },
+                            'TableName': table_name
+                        }
+                    }
+                ]
             )
+            
         except ClientError as e:
             print(e)
             response_body = {
@@ -56,6 +85,15 @@ def handler(event, context):
                 'body': json.dumps(response_body),
             }
             return response
+        
+        response_body = {
+            'message': str(db_response)
+        }
+        response = {
+            'statusCode': 200,
+            'body': json.dumps(response_body),
+        }
+        return response
     if(event.get('routeKey').startswith('GET')):
         if(event.get('queryStringParameters') is None):
             response_body = {
@@ -67,36 +105,6 @@ def handler(event, context):
                 'body': json.dumps(response_body),
             }
             return response
-            # GET all user's clusters
-            # query_params = {
-            #     'TableName': 'CloudNativeDAM_DB',
-            #     'IndexName': index_name,
-            #     'ExpressionAttributeNames': {'#C_ID': 'SK', '#OWN': 'Data'},
-            #     'ExpressionAttributeValues': {':Cid': {'S': 'CLUSTER#'},':Uid': {'S': requester_cognito_user_id}},
-            #     'KeyConditionExpression': '#OWN = :Uid AND begins_with(#C_ID, :Cid)'
-            # }
-            
-            # try:
-            #     items = query(query_params)
-            #     response_body = {
-            #         'items': items# TODO
-            #     }
-
-            #     response = {
-            #         'statusCode': 200,
-            #         'body': json.dumps(response_body),
-            #     }
-            #     return response
-            # except ClientError as e:
-            #     print(e)
-            #     response_body = {
-            #         'message': e.response['Error']['Code']
-            #     }
-            #     response = {
-            #         'statusCode': 500,
-            #         'body': json.dumps(response_body),
-            #     }
-            #     return response
         
         else:
             try:
@@ -106,7 +114,7 @@ def handler(event, context):
                     query_params = {
                         'TableName': 'CloudNativeDAM_DB',
                         'IndexName': index_name,
-                        'ProjectionExpression':"fileSize_MB",
+                        'ProjectionExpression':"SizeOfFile_MB",
                         'ExpressionAttributeNames': {'#U_ID': 'Data', '#SK': 'SK'},
                         'ExpressionAttributeValues': {':Uid': {'S': requester_cognito_user_id},':sk': {'S': 'FILE#'}},
                         'KeyConditionExpression': '#U_ID = :Uid AND begins_with(#SK, :sk)'
@@ -114,7 +122,7 @@ def handler(event, context):
                     user_files = query(query_params)
                     used_storage_size = 0
                     for item in user_files:
-                        used_storage_size += float(item['fileSize_MB']['N'])
+                        used_storage_size += float(item['SizeOfFile_MB']['N'])
                     
                     response_body = {
                         'usedStorageSize': used_storage_size
@@ -177,37 +185,8 @@ def handler(event, context):
     if(event.get('routeKey').startswith('DELETE')):
         
         file_id = json.loads(event.get('body')).get('fileId')
-
-        if(event.get('queryStringParameters').get('action') == 'removeFromCluster'):
-            cluster_id = json.loads(event.get('body')).get('clusterId')
-            try:
-                print(cluster_id)
-                print(file_id)
-                db_response = table.delete_item(
-                    Key={
-                        'ID': cluster_id,
-                        'SK': file_id
-                    }
-                )
-                response_body = {
-                    'message': 'File removed from the cluster successfully'
-                }
-                response = {
-                    'statusCode': 200,
-                    'body': json.dumps(response_body),
-                }
-                return response
-            except ClientError as e:
-                print(e)
-                response_body = {
-                    'message': e.response['Error']['Code']
-                }
-                response = {
-                    'statusCode': 500,
-                    'body': json.dumps(response_body),
-                }
-                return response
-        else:
+        cluster_id = json.loads(event.get('body')).get('clusterId')
+        if(cluster_id is None):
             #DELETE the file
             try:
                 # Delete all Cluster-File records
@@ -248,6 +227,34 @@ def handler(event, context):
                     'body': json.dumps(response_body),
                 }
                 return response
+        else:
+            try:
+                db_response = table.delete_item(
+                    Key={
+                        'ID': cluster_id,
+                        'SK': file_id
+                    }
+                )
+                response_body = {
+                    'message': 'File removed from the cluster successfully'
+                }
+                response = {
+                    'statusCode': 200,
+                    'body': json.dumps(response_body),
+                }
+                return response
+            except ClientError as e:
+                print(e)
+                response_body = {
+                    'message': e.response['Error']['Code']
+                }
+                response = {
+                    'statusCode': 500,
+                    'body': json.dumps(response_body),
+                }
+                return response
+        
+            
     response_body = {
         'message': 'no such operation available'
     }

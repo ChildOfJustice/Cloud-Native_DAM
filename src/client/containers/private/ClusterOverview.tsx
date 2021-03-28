@@ -30,10 +30,11 @@ const mapDispatcherToProps = (dispatch: Dispatch<DemoActions>) => {
 }
 
 interface IState {
+    clusterName: string
     files: FileMetadata[]
     coUsers: Permission[]
     principalUserId: string
-    userId: string
+    currentClusterId: string
     downloadPermissionCheckboxChecked: boolean
     uploadPermissionCheckboxChecked: boolean
     deletePermissionCheckboxChecked: boolean
@@ -51,10 +52,11 @@ type ReduxType = IProps & ReturnType<typeof mapStateToProps> & ReturnType<typeof
 
 class ClusterOverview extends React.Component<ReduxType, IState> {
     public state: IState = {
+        clusterName: "",
         files: [],
         coUsers: [],
         principalUserId: "",
-        userId: "",
+        currentClusterId: "",
         downloadPermissionCheckboxChecked: false,
         uploadPermissionCheckboxChecked: false,
         deletePermissionCheckboxChecked: false,
@@ -68,22 +70,36 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         await this.props.loadStore()
 
+
+        // @ts-ignore
+        let clusterId = this.props.match.params.clusterId
+        //alert('GOT ID: ' + clusterId)
+        await this.setState({currentClusterId: clusterId})
+        //alert('set ID: ' + this.state.currentClusterId)
+        // if (clusterId !== ''){
+        //     await localStorage.setItem('currentClusterId', clusterId)
+        //     await this.setState({currentClusterId: clusterId})
+        //     alert('set ID: ' + this.state.currentClusterId)
+        // } else {
+        //     clusterId = await localStorage.getItem('currentClusterId')
+        //     await this.setState({currentClusterId: clusterId})
+        //     alert('loaded ID: ' + this.state.currentClusterId)
+        // }
+
         this.getCurrentUserPermissions()
-        // @ts-ignore
-        this.loadFilesMetadata(this.props.match.params.clusterId)
-        // @ts-ignore
-        this.getAllCoUsers(this.props.match.params.clusterId);
     }
 
     //Initialization functions
     getCurrentUserPermissions = () => {
 
-        const { authToken } = this.props;
+
+        const { authToken } = this.props
 
         //check whether if the user is owner of this cluster
+        //alert('request with ID: ' + this.state.currentClusterId)//already encoded from PersonalPage
         const fetchParams: FetchParams = {
             // @ts-ignore
-            url: '/clusters?clusterId=' + this.props.match.params.clusterId,
+            url: '/clusters?clusterId=' + this.state.currentClusterId,
             token: authToken,
             method: 'GET',
 
@@ -92,13 +108,17 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
+
+            this.setState({clusterName: jsonRes['cluster']['Name']['S']})
+
             if(jsonRes['youAreTheOwner'] === true){
                 this.setState({permissions: "1111"})
-            } else {
+            }
+            else {
                 //the user is NOT the owner of this cluster, getting the permissions:
                 const fetchParams: FetchParams = {
                     // @ts-ignore
-                    url: '/permissions?action=getUserPermissions&clusterId=' + this.props.match.params.clusterId,
+                    url: '/permissions?action=getUserPermissions&clusterId=' + this.state.currentClusterId,
                     token: authToken,
                     method: 'GET',
 
@@ -110,9 +130,18 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                     this.setState({permissions: jsonRes['permissions']})
                 }).catch(error => alert("ERROR: " + error))
             }
+
+            this.loadFilesMetadata()
+            this.getAllCoUsers()
         }).catch(error => alert("ERROR: " + error))
     }
-    loadFilesMetadata = (clusterId: number) => {
+    loadFilesMetadata = () => {
+        if(this.state.permissions[0] !== '1' && this.state.permissions[2] !== '1'){
+            return
+        }
+
+        let clusterId = this.state.currentClusterId
+
         const { authToken } = this.props;
 
         const fetchParams: FetchParams = {
@@ -125,11 +154,13 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-            this.setState({files: jsonRes['items'].map((item:any, i:number) => {return {id: item['SK']['S'], name: item['name']['S'], S3uniqueName: item['S3uniqueName']['S'], cloud: item['cloud']['S'], uploadedBy: item['uploadedBy']['S'], ownedBy: item['ownedBy']['S'], sizeOfFile_MB: item['sizeOfFile_MB']['N'], tagsKeys: item['tagsKeys']['SS'], tagsValues: item['tagsValues']['SS'], }})})
+            this.setState({files: jsonRes['items'].map((item:any, i:number) => {return {id: item['SK']['S'], name: item['Name']['S'], S3uniqueName: item['S3uniqueName']['S'], cloud: item['Cloud']['S'], uploadedBy: item['UploadedBy']['S'], ownedBy: item['OwnedBy']['S'], sizeOfFile_MB: item['SizeOfFile_MB']['N'], tagsKeys: item['TagsKeys']['SS'], tagsValues: item['TagsValues']['SS'], }})})
         }).catch(error => alert("ERROR: " + error))
 
     }
-    getAllCoUsers = (clusterId: number) => {
+    getAllCoUsers = () => {
+        let clusterId = this.state.currentClusterId
+
         if(this.state.permissions[3] !== '1'){
             return//TODO check whether its being executed
         }
@@ -145,7 +176,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-            this.setState({coUsers: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], permissionId: item['SK']['S'], permissionGiverUserId: item['GiverUserID']['S'], permissions: item['Permissions']['S'], principalUserId: item['Data']['S']}})})
+            this.setState({coUsers: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], permissionId: item['SK']['S'], permissionGiverUserId: item['GiverUserId']['S'], permissions: item['Permissions']['S'], principalUserId: item['Data']['S']}})})
         }).catch(error => alert("ERROR: " + error))
     }
     //^
@@ -160,7 +191,8 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         const permissions = "" + downloadPerm + uploadPerm + deletePerm + canGivePermissionsToOthers
         let coUserData: Permission = {
             // @ts-ignore
-            clusterId: this.props.match.params.clusterId,
+            clusterId: decodeURIComponent(this.state.currentClusterId),
+            clusterName: this.state.clusterName,
             principalUserId: this.state.principalUserId,
             permissions: permissions,
         }
@@ -178,7 +210,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
             // @ts-ignore
-            this.getAllCoUsers(this.props.match.params.clusterId);
+            this.getAllCoUsers();
         }).catch(error => alert("ERROR: " + error))
 
     }
@@ -284,7 +316,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             return
         }
         if(fileId === undefined){
-            alert("file ID cannot be undefined!")
+            alert("File ID cannot be undefined.")
             return
         }
 
@@ -293,6 +325,21 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         let deletePermanently = prompt('Type "delete" to permanently delete the file or leave it blank to just unlink this file from the current cluster.', '');
 
         if(deletePermanently === 'delete'){
+
+            this.deleteFilePermanently(fileId)
+
+
+
+
+
+            return //TODO add S3
+
+
+
+
+
+
+
             //TODO need to be a Transaction!!!
             AWS.config.update({
                 region: config.AWS.S3.bucketRegion,
@@ -336,19 +383,20 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             // if(error === 0){
             //
             // }
-        } else {
+        }
+        else {
             //Just delete the file-cluster record for this file
             // @ts-ignore
-            let clusterId_ = this.props.match.params.clusterId
+            let clusterId_ = this.state.currentClusterId
 
             const { authToken } = this.props;
 
             let fileData = {
                 fileId: fileId,
-                clusterId: clusterId_
+                clusterId: decodeURIComponent(clusterId_)
             }
             const fetchParams: FetchParams = {
-                url: '/files?action=removeFromCluster',
+                url: '/files',
                 token: authToken,
                 method: 'DELETE',
                 body: fileData,
@@ -359,9 +407,11 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             makeFetch<string>(fetchParams).then(jsonRes => {
                 console.log(jsonRes)
                 console.log("Successfully deleted the file-cluster record")
-
+                this.loadFilesMetadata()
             }).catch(error => alert("ERROR: " + error))
         }
+
+
     }
     deleteFilePermanently = (fileId?: number) => {
         const { authToken } = this.props;
@@ -381,7 +431,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         makeFetch<string>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
             console.log("Successfully deleted the file")
-
+            this.loadFilesMetadata()
         }).catch(error => alert("ERROR: " + error))
     }
     deleteCoUser = (couserPermission: Permission) => {
@@ -389,7 +439,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         const { authToken } = this.props;
         let permissionData: Permission = {
             // @ts-ignore
-            clusterId: this.props.match.params.clusterId,
+            clusterId: this.state.currentClusterId,
             permissionId: couserPermission.permissionId
         }
         const fetchParams: FetchParams = {
@@ -403,7 +453,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-            this.getAllCoUsers(permissionData.clusterId)
+            this.getAllCoUsers()
         }).catch(error => alert("ERROR: " + error))
     }
 
@@ -463,7 +513,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         <div className="UploadPanel">
             {canUpload ?
                 <LinkContainer to={// @ts-ignore
-                    "/private/uploadFile/" + this.props.match.params.clusterId}>
+                    "/private/uploadFile/" + this.state.currentClusterId}>
                     <Navbar.Brand>Upload file</Navbar.Brand>
                 </LinkContainer>
                 : ''}
