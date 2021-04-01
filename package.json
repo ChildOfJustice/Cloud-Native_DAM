@@ -2,6 +2,17 @@
   "name": "react-app",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "build": "rm -rf ./build/* && webpack --config webpack.config.js",
+    "deploy": "cd utils/AWS/CF/GenerateCfDeploymentScript && sh generateDeployScript.sh && cd ../PackageCfTemplate && sh packageTemplate.sh && cd .. && sh deploy-CF-template.sh",
+    "package": "sh ./utils/Deployment/package.sh",
+    "serve": "serve -s build",
+    "build-ts": "rm -rf ./build/* && react-scripts build",
+    "start": "react-scripts start",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "start2": "webpack && webpack-dev-server --mode development"
+  },
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.9",
     "@testing-library/react": "^11.2.5",
@@ -27,17 +38,6 @@
     "typesafe-actions": "^5.1.0",
     "uuid": "^8.3.2",
     "web-vitals": "^1.1.0"
-  },
-  "scripts": {
-    "build": "rm -rf ./build/* && webpack --config webpack.config.js",
-    "deploy": "cd utils/AWS/CF/GenerateCfDeploymentScript && sh generateDeployScript.sh && cd ../PackageCfTemplate && sh packageTemplate.sh && cd .. && sh deploy-CF-template.sh",
-    "package": "sh ./utils/Deployment/package.sh",
-    "serve": "serve -s build",
-    "build-ts": "rm -rf ./build/* && react-scripts build",
-    "start": "react-scripts start",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "start2": "webpack && webpack-dev-server --mode development"
   },
   "keywords": [],
   "author": "Yuldashev Andrey",
