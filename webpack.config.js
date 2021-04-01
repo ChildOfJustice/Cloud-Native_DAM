@@ -7,14 +7,35 @@ const path = require('path');
 module.exports = {
     mode: 'production',
     entry: './src/index.tsx',
+
+    // entry: {
+    //     home: './src/client/containers/Home.tsx',
+    //     personalPage: './src/client/containers/private/PersonalPage.tsx'
+    // },
+
     // externals: [{'aws-sdk': 'commonjs aws-sdk'}],
     //externals: [nodeExternals( { whitelist: [ 'le-challenge-s3', 'le-store-s3' ]  } ) ],
     //devtool: 'source-map',//'inline-source-map'
     output: {
-        filename: 'bundle.js',
+        filename: '[name].bundle.js',
         publicPath: '/',
         path: path.resolve(__dirname, 'build'),
     },
+    // optimization: {
+    //     splitChunks: {
+    //         chunks: 'async',
+    //         minSize: 20000,
+    //         minChunks: 3,
+    //         maxAsyncRequests: 30,
+    //         maxInitialRequests: 30,
+    //         enforceSizeThreshold: 50000,
+    //     },
+    // },
+    // optimization: {
+    //     splitChunks: {
+    //         chunks: 'all',
+    //     },
+    // },
     module: {
         rules: [
             {
