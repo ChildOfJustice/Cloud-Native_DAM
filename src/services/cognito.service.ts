@@ -6,11 +6,11 @@ import {PromiseOutput} from "../interfaces/promiseOutput";
 
 class CognitoService {
     private  config = {
-        region: config.userPoolRegion,
+        region: config.AWS.Cognito.userPoolRegion,
     }
 
-    private secretHash: string = config.secretHash
-    private clientId: string = config.clientId
+    private secretHash: string = config.AWS.Cognito.secretHash
+    private clientId: string = config.AWS.Cognito.clientId
 
     public cognitoIdentity: any;
     constructor() {

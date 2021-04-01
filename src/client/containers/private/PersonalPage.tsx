@@ -16,6 +16,7 @@ import CognitoService from "../../../services/cognito.service";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 import * as tokensService from "../../../store/demo/tokens.service";
 import Test from "../Test";
+import ClusterOverview from "./ClusterOverview";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;
@@ -337,18 +338,25 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                     <tr>
                         <th>#</th>
                         <th>Cluster</th>
+                        <th>Name</th>
                         <th>Delete</th>
                     </tr>
                     </thead>
                     <tbody>
                     {this.state.clusters.map(
-                        (cluster: Cluster) => <LinkContainer to={{
-                            pathname: '/private/clusters/' + encodeURIComponent(cluster.clusterId!),
-                        }}>
+                        (cluster: Cluster) =>
                             <tr onClick={this.handleTableClick}>
                                 <td key={counter}>
                                     {counter++}
                                 </td>
+
+                                <LinkContainer to={{
+                                    pathname: '/private/clusters/' + encodeURIComponent(cluster.clusterId!),
+                                }}>
+                                    <td>
+                                        <Button variant="info">See</Button>
+                                    </td>
+                                </LinkContainer>
                                 <td>
                                     {cluster.name}
                                 </td>
@@ -356,7 +364,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                                     <Button onClick={() => this.deleteCluster(cluster.clusterId)} variant="danger">X</Button>
                                 </td>
                             </tr>
-                        </LinkContainer>
+
                     )}
 
                     </tbody>

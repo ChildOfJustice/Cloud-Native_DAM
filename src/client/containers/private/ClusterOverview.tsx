@@ -113,6 +113,8 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
             if(jsonRes['youAreTheOwner'] === true){
                 this.setState({permissions: "1111"})
+                this.loadFilesMetadata()
+                this.getAllCoUsers()
             }
             else {
                 //the user is NOT the owner of this cluster, getting the permissions:
@@ -128,11 +130,12 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                 makeFetch<any>(fetchParams).then(jsonRes => {
                     console.log(jsonRes)
                     this.setState({permissions: jsonRes['permissions']})
+                    this.loadFilesMetadata()
+                    this.getAllCoUsers()
                 }).catch(error => alert("ERROR: " + error))
             }
 
-            this.loadFilesMetadata()
-            this.getAllCoUsers()
+
         }).catch(error => alert("ERROR: " + error))
     }
     loadFilesMetadata = () => {
@@ -223,9 +226,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         if (cloud === 'AWS'){
 
             AWS.config.region = config.AWS.region; // Region
-            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-                IdentityPoolId: config.AWS.IdentityPool.IdentityPoolId,
-            });
+            AWS.config.credentials = new AWS.Credentials(config.AWS.S3.accessKeyId, config.AWS.S3.secretAccessKey);
             // AWS.config.update({
             //     region: config.AWS.S3.bucketRegion,
             //     credentials: new AWS.CognitoIdentityCredentials({
@@ -326,27 +327,16 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         if(deletePermanently === 'delete'){
 
-            this.deleteFilePermanently(fileId)
-
-
-
-
-
-            return //TODO add S3
-
-
-
-
-
+            // this.deleteFilePermanently(fileId)
 
 
             //TODO need to be a Transaction!!!
             AWS.config.update({
                 region: config.AWS.S3.bucketRegion,
-                credentials: new AWS.CognitoIdentityCredentials({
-                    IdentityPoolId: config.AWS.IdentityPool.IdentityPoolId
-                })
+                credentials: new AWS.Credentials(config.AWS.S3.accessKeyId, config.AWS.S3.secretAccessKey)
             });
+
+
 
             const s3 = new AWS.S3({
                 apiVersion: '2006-03-01',
@@ -375,7 +365,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                 }
             })
             // while(error === -1){
-            //     //TODO BADDDDDDDDRRRR
+            //
             //     //waiting for the response
             // }
             // alert(error)
@@ -439,7 +429,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         const { authToken } = this.props;
         let permissionData: Permission = {
             // @ts-ignore
-            clusterId: this.state.currentClusterId,
+            clusterId: decodeURIComponent(this.state.currentClusterId),
             permissionId: couserPermission.permissionId
         }
         const fetchParams: FetchParams = {

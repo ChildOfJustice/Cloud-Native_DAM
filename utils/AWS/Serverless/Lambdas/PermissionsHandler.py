@@ -106,9 +106,14 @@ def handler(event, context):
                 
                 try:
                     items = query(query_params)
-                    response_body = {
-                        'permissions': items[0]['Permissions']['S']
-                    }
+                    if(len(items) != 0):
+                        response_body = {
+                            'permissions': items[0]['Permissions']['S']
+                        }
+                    else:
+                        response_body = {
+                            'permissions': "0000"
+                        }
 
                     response = {
                         'statusCode': 200,

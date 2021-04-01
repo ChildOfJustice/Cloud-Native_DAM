@@ -21,6 +21,36 @@ Parameters:
     Type: String
     Default: amplifytestappdomain
 Resources:
+  ProgrammaticUserForS3:
+    Type: AWS::IAM::User
+    Properties:
+      Policies:
+      - PolicyName: ManagerS3Policy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:DeleteObjectTagging
+            - s3:PutObject
+            - s3:DeleteObject
+            - s3:GetObject
+            - s3:ReplicateTags
+            - s3:PutObjectVersionTagging
+            - s3:PutObjectTagging
+            Resource:
+              Fn::Sub:
+              - ${bucketArn}/*
+              - bucketArn:
+                  Fn::GetAtt:
+                  - StorageBucket
+                  - Arn
+      UserName: ManagerS3
+  AccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:
+        Ref: ProgrammaticUserForS3
   MyAPI:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -294,7 +324,7 @@ Resources:
         - /
         - - integrations
           - Ref: PermissionsIntegration
-  PermissionsGetRoute:
+  PermissionsGetProxyRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId:
@@ -304,6 +334,21 @@ Resources:
         Ref: JWTAuthorizer
       OperationName: permissions-get
       RouteKey: GET /permissions/{proxy+}
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: PermissionsIntegration
+  PermissionsGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: MyAPI
+      AuthorizationType: JWT
+      AuthorizerId:
+        Ref: JWTAuthorizer
+      OperationName: permissions-get
+      RouteKey: GET /permissions
       Target:
         Fn::Join:
         - /
@@ -372,6 +417,22 @@ Resources:
         Issuer:
           Fn::Sub: https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
       Name: test-jwt-authorizer
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: sardor-app-storage
+      CorsConfiguration:
+        CorsRules:
+        - AllowedOrigins:
+          - Ref: CognitoOriginUrl
+          AllowedMethods:
+          - POST
+          - GET
+          - PUT
+          - DELETE
+          - HEAD
+          AllowedHeaders:
+          - '*'
   MyLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -381,7 +442,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: MyLambdaFunction.handler
-      CodeUri: s3://sardor-test-code/30df24827586dec8147fbda6d30211fd
+      CodeUri: s3://sardor-test-code/ef201bc86c54ea6ab95c3dcf0ccbae7b
   UsersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -391,7 +452,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersHandler.handler
-      CodeUri: s3://sardor-test-code/e85478b38b6dca95cc15fc2276358f3f
+      CodeUri: s3://sardor-test-code/972ce9a14ac027f2a4a6109c19889a27
   UsersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -401,7 +462,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/a13cf1dfd733eb0ee52fc0d2511aa392
+      CodeUri: s3://sardor-test-code/81690a6c5087a64d55f17680bcf429a2
   ClustersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -411,7 +472,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersHandler.handler
-      CodeUri: s3://sardor-test-code/f0d7968a59cde3a25c39cd30a303a6ef
+      CodeUri: s3://sardor-test-code/6f2d8c94e0338babaf61b6d7b5d3bd69
   ClustersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -421,7 +482,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/756ca45ea15d361e8548f1bd280acfcf
+      CodeUri: s3://sardor-test-code/56eb69a01f5c12d5caf6bea3a3ddf331
   FilesLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -431,7 +492,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: FilesHandler.handler
-      CodeUri: s3://sardor-test-code/fe89c2c276dffa8af9c3d4709b9bd139
+      CodeUri: s3://sardor-test-code/b6a2049022eca03983055d010ea838eb
   PermissionsLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -441,7 +502,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: PermissionsHandler.handler
-      CodeUri: s3://sardor-test-code/5edc4dd4c522711a8ce8f47dd0fcf78d
+      CodeUri: s3://sardor-test-code/f298585ebe6937ce6d06fccdc196b35d
   AdminLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -451,7 +512,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: AdminHandler.handler
-      CodeUri: s3://sardor-test-code/b615df6418975ac78a83aa11c92163c7
+      CodeUri: s3://sardor-test-code/74bc47ea2355c86cf8114905441c3cc7
   APIInvokeTestLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -585,6 +646,7 @@ Resources:
       LogoutURLs:
       - Ref: CognitoLogOutUrl
       ExplicitAuthFlows:
+      - ALLOW_ADMIN_USER_PASSWORD_AUTH
       - ALLOW_USER_PASSWORD_AUTH
       - ALLOW_REFRESH_TOKEN_AUTH
       GenerateSecret: true
@@ -608,3 +670,11 @@ Outputs:
       Fn::GetAtt:
       - MyAPI
       - ApiEndpoint
+  AccessKeyId:
+    Value:
+      Ref: AccessKey
+  SecretAccessKey:
+    Value:
+      Fn::GetAtt:
+      - AccessKey
+      - SecretAccessKey

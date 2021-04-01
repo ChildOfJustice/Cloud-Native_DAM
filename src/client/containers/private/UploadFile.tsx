@@ -145,7 +145,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
             var metadata: FileMetadata = {
                 name: file.name,
                 // @ts-ignore
-                S3uniqueName: this.props.match.params.clusterId + "/" + uuidv4(),
+                S3uniqueName: decodeURIComponent(this.props.match.params.clusterId) + "/" + uuidv4(),
                 cloud: "AWS",
                 ownedBy: defaultTagValue1,
                 uploadedBy: defaultTagValue2,
@@ -166,16 +166,14 @@ class UploadFile extends React.Component<ReduxType, IState> {
                 }
 
 
-                this.createFileClusterSubRecord(metadata)
+                // this.createFileClusterSubRecord(metadata)
 
-                return //TODO add S3
+
 
 
                 //AWS initialization:
                 AWS.config.region = config.AWS.region; // Region
-                AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-                    IdentityPoolId: config.AWS.IdentityPool.IdentityPoolId,
-                });
+                AWS.config.credentials = new AWS.Credentials(config.AWS.S3.accessKeyId, config.AWS.S3.secretAccessKey);
 
                 //TODO check whether if it is crucial?
                 // var s3 = new AWS.S3({
@@ -210,7 +208,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
                 promise.then(
                     function(data) {
                         alert("File uploaded successfully.");
-                        window.close();
+                        //window.close();
 
                         localThis.createFileClusterSubRecord(metadata)
                     },
