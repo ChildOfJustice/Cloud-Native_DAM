@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "rm -rf ./build/* && webpack --config webpack.config.js",
-    "deploy": "cd utils/AWS/CF/GenerateCfDeploymentScript && sh generateDeployScript.sh && cd ../PackageCfTemplate && sh packageTemplate.sh && cd .. && sh deploy-CF-template.sh",
+    "deploy": "sh ./utils/Deployment/fullDeploy.sh",
     "package": "sh ./utils/Deployment/package.sh",
     "serve": "serve -s build",
     "build-ts": "rm -rf ./build/* && react-scripts build",

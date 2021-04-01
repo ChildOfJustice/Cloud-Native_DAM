@@ -425,6 +425,62 @@ Resources:
               - HEAD
             AllowedHeaders: 
               - "*"
+  #-----------------API GATEWAY DEPLOYMENT
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "CloudNativeDAM_DB"
+      AttributeDefinitions:
+        -
+          AttributeName: "ID"
+          AttributeType: "S"
+        -
+          AttributeName: "SK"
+          AttributeType: "S"
+        -
+          AttributeName: "Data"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "ID"
+          KeyType: "HASH"
+        -
+          AttributeName: "SK"
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "1"
+        WriteCapacityUnits: "1"
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "Data-index"
+          KeySchema:
+            -
+              AttributeName: "Data"
+              KeyType: "HASH"
+            -
+              AttributeName: "SK"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "1"
+            WriteCapacityUnits: "1"
+        -
+          IndexName: "File-Clusters-index"
+          KeySchema:
+            -
+              AttributeName: "SK"
+              KeyType: "HASH"
+            -
+              AttributeName: "ID"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "1"
+            WriteCapacityUnits: "1"
+
+  #-----------------LAMBDA FUNCTIONS
   MyLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:

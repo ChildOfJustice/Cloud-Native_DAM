@@ -2,6 +2,7 @@ import Jumbotron from "react-bootstrap/Jumbotron";
 import {LinkContainer} from "react-router-bootstrap";
 import Button from "react-bootstrap/Button";
 import * as React from "react";
+import config from "../../config";
 
 interface IProps {
     params: string;
@@ -10,6 +11,13 @@ interface IProps {
 interface IState {}
 
 class Home extends React.Component<IProps, IState> {
+
+
+    loginButtonClickHandler = (e: any) => {
+        e.preventDefault()
+        window.location.href = config.AppConfig.loginURL
+    }
+
 
     render() {
         return (
@@ -22,10 +30,7 @@ class Home extends React.Component<IProps, IState> {
                     Feel free to test our service.
                 </p>
                 <p>
-                    <LinkContainer to="/signIn">
-                        <Button variant="primary">Login</Button>
-                    {/*TODO Implement redirection to the UI from Cognito*/}
-                    </LinkContainer>
+                    <Button onClick={this.loginButtonClickHandler} variant="primary">Login</Button>
 
                     {/*<LinkContainer to="/test">*/}
                     {/*    <Button variant="primary">Test</Button>*/}

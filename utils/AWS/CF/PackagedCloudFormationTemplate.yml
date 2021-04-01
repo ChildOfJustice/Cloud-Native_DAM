@@ -433,6 +433,48 @@ Resources:
           - HEAD
           AllowedHeaders:
           - '*'
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: CloudNativeDAM_DB
+      AttributeDefinitions:
+      - AttributeName: ID
+        AttributeType: S
+      - AttributeName: SK
+        AttributeType: S
+      - AttributeName: Data
+        AttributeType: S
+      KeySchema:
+      - AttributeName: ID
+        KeyType: HASH
+      - AttributeName: SK
+        KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: '1'
+        WriteCapacityUnits: '1'
+      GlobalSecondaryIndexes:
+      - IndexName: Data-index
+        KeySchema:
+        - AttributeName: Data
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+        ProvisionedThroughput:
+          ReadCapacityUnits: '1'
+          WriteCapacityUnits: '1'
+      - IndexName: File-Clusters-index
+        KeySchema:
+        - AttributeName: SK
+          KeyType: HASH
+        - AttributeName: ID
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+        ProvisionedThroughput:
+          ReadCapacityUnits: '1'
+          WriteCapacityUnits: '1'
   MyLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -442,7 +484,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: MyLambdaFunction.handler
-      CodeUri: s3://sardor-test-code/ef201bc86c54ea6ab95c3dcf0ccbae7b
+      CodeUri: s3://sardor-test-code/5f7d1d2ce2177fab9d1ff02dd965f148
   UsersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -452,7 +494,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersHandler.handler
-      CodeUri: s3://sardor-test-code/972ce9a14ac027f2a4a6109c19889a27
+      CodeUri: s3://sardor-test-code/b92003df9d5723da57be135caa150891
   UsersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -462,7 +504,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/81690a6c5087a64d55f17680bcf429a2
+      CodeUri: s3://sardor-test-code/89ca5b60ad8852a9413f05a469ed72a8
   ClustersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -472,7 +514,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersHandler.handler
-      CodeUri: s3://sardor-test-code/6f2d8c94e0338babaf61b6d7b5d3bd69
+      CodeUri: s3://sardor-test-code/69823f61f193db41fb810e2cf5ea48af
   ClustersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -482,7 +524,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/56eb69a01f5c12d5caf6bea3a3ddf331
+      CodeUri: s3://sardor-test-code/fbf1876237c615118c9ad3933e976f78
   FilesLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -492,7 +534,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: FilesHandler.handler
-      CodeUri: s3://sardor-test-code/b6a2049022eca03983055d010ea838eb
+      CodeUri: s3://sardor-test-code/a84bd8503a51b2854f6d499441bc9635
   PermissionsLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -502,7 +544,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: PermissionsHandler.handler
-      CodeUri: s3://sardor-test-code/f298585ebe6937ce6d06fccdc196b35d
+      CodeUri: s3://sardor-test-code/3880542fad60ea85865e1811869777ac
   AdminLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -512,7 +554,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: AdminHandler.handler
-      CodeUri: s3://sardor-test-code/74bc47ea2355c86cf8114905441c3cc7
+      CodeUri: s3://sardor-test-code/73ef4b37132542640d4bb2123bb6c2aa
   APIInvokeTestLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -624,6 +666,8 @@ Resources:
       UserPoolName: http-api-user-pool
       AutoVerifiedAttributes:
       - email
+      UsernameAttributes:
+      - email
       Schema:
       - Name: email
         AttributeDataType: String
@@ -664,7 +708,7 @@ Resources:
 Outputs:
   SignupURL:
     Value:
-      Fn::Sub: https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile&redirect_uri=${CognitoCallBackUrl}
+      Fn::Sub: https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile+aws.cognito.signin.user.admin&redirect_uri=${CognitoCallBackUrl}
   ApiEndpoint:
     Value:
       Fn::GetAtt:

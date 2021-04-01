@@ -349,14 +349,11 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                                 <td key={counter}>
                                     {counter++}
                                 </td>
-
-                                <LinkContainer to={{
-                                    pathname: '/private/clusters/' + encodeURIComponent(cluster.clusterId!),
-                                }}>
-                                    <td>
+                                <td>
+                                    <LinkContainer to={{pathname: '/private/clusters/' + encodeURIComponent(cluster.clusterId!),}}>
                                         <Button variant="info">See</Button>
-                                    </td>
-                                </LinkContainer>
+                                    </LinkContainer>
+                                </td>
                                 <td>
                                     {cluster.name}
                                 </td>
