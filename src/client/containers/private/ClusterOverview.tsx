@@ -33,7 +33,7 @@ interface IState {
     clusterName: string
     files: FileMetadata[]
     coUsers: Permission[]
-    principalUserId: string
+    principalUserName: string
     currentClusterId: string
     downloadPermissionCheckboxChecked: boolean
     uploadPermissionCheckboxChecked: boolean
@@ -55,7 +55,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         clusterName: "",
         files: [],
         coUsers: [],
-        principalUserId: "",
+        principalUserName: "",
         currentClusterId: "",
         downloadPermissionCheckboxChecked: false,
         uploadPermissionCheckboxChecked: false,
@@ -179,7 +179,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-            this.setState({coUsers: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], permissionId: item['SK']['S'], permissionGiverUserId: item['GiverUserId']['S'], permissions: item['Permissions']['S'], principalUserId: item['Data']['S']}})})
+            this.setState({coUsers: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], permissionId: item['SK']['S'], permissionGiverUserId: item['GiverUserId']['S'], permissions: item['Permissions']['S'], principalUserName: item['Data']['S']}})})
         }).catch(error => alert("ERROR: " + error))
     }
     //^
@@ -196,7 +196,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             // @ts-ignore
             clusterId: decodeURIComponent(this.state.currentClusterId),
             clusterName: this.state.clusterName,
-            principalUserId: this.state.principalUserId,
+            principalUserName: this.state.principalUserName,
             permissions: permissions,
         }
         const { authToken } = this.props;
@@ -448,7 +448,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
     }
 
     _onChangeCoUserId = (e: React.ChangeEvent<HTMLInputElement>) => {
-        this.setState({principalUserId: (e.target as HTMLInputElement).value})
+        this.setState({principalUserName: (e.target as HTMLInputElement).value})
     }
     handleDownloadPermissionChange = (evt: any) => {
         this.setState({ downloadPermissionCheckboxChecked: evt.target.checked });
@@ -470,7 +470,13 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                 <Form.Group controlId="formBasicUserName">
                     <Form.Label>Share this cluster</Form.Label><br/>
                     <Form.Label>User to share with</Form.Label>
-                    <Form.Control onChange={this._onChangeCoUserId} type="string" placeholder="User Id"/>
+                    {/*<select value={this.state.value} onChange={this.handleChange}>*/}
+                    {/*    <option value="grapefruit">Грейпфрут</option>*/}
+                    {/*    <option value="lime">Лайм</option>*/}
+                    {/*    <option value="coconut">Кокос</option>*/}
+                    {/*    <option value="mango">Манго</option>*/}
+                    {/*</select>*/}
+                    <Form.Control onChange={this._onChangeCoUserId} type="string" placeholder="User Email"/>
                     <Form.Label>Permissions for the user</Form.Label>
                     <Form.Check
                         type={"checkbox"}
@@ -618,8 +624,8 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                                     <td key={counter}>
                                         {counter++}
                                     </td>
-                                    <td key={couserData.principalUserId}>
-                                        {couserData.principalUserId}
+                                    <td key={couserData.principalUserName}>
+                                        {couserData.principalUserName}
                                     </td>
                                     <td>
                                         {couserData.permissions}

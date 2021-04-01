@@ -638,8 +638,10 @@ Resources:
       UserPoolName: http-api-user-pool
       AutoVerifiedAttributes:
         - email
-      UsernameAttributes:
+      AliasAttributes:
         - email
+#      UsernameAttributes:
+#        - email
       Schema:
         # - Name: name
         #   AttributeDataType: String

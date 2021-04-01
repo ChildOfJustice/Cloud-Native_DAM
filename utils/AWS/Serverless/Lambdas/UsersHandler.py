@@ -1,11 +1,13 @@
 import boto3
 import json
 from boto3.dynamodb.conditions import Attr, Key
+from botocore.exceptions import ClientError
 
 def handler(event, context):
     table = boto3.resource("dynamodb").Table("CloudNativeDAM_DB")
     index_name = "Data-index"
 
+    print(event)
     # while True:
     #     if (
     #         not table.global_secondary_indexes
@@ -67,7 +69,7 @@ def handler(event, context):
         except ClientError as e:
             print(e)
             response_body = {
-                'message': e
+                'message': e.response['Error']['Code']
             }
             response = {
                 'statusCode': 500,
@@ -93,7 +95,7 @@ def create_new_user(table, jwt_claims):
     db_response = table.put_item(
         Item={
             'ID': jwt_claims.get('sub'),
-            'SK': 'USER',
+            'SK': jwt_claims.get('sub'),
             'Data': jwt_claims.get('username'),
             'role': 'ORDINARY_USER'
         }

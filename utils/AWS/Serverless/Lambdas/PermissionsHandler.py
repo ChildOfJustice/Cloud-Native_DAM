@@ -14,25 +14,73 @@ def handler(event, context):
         #POST create a co-user
         new_permission_id = str(uuid.uuid4())
         try:
-            db_response = table.put_item(
-                Item={
-                    'ID': json.loads(event.get('body')).get('clusterId'),
-                    'SK': 'PERMISSION#' + new_permission_id,
-                    'Data': json.loads(event.get('body')).get('principalUserId'),
-                    'GiverUserId': requester_cognito_user_id,
-                    'Permissions': json.loads(event.get('body')).get('permissions'),
-                    'ClusterOwnerUserName': event.get('requestContext').get('authorizer').get('jwt').get('claims').get('username'),
-                    'ClusterName': json.loads(event.get('body')).get('clusterName')
+            #Check whether if the permission already exists
+            cluster_id = json.loads(event.get('body')).get('clusterId')
+            query_params = {
+                'TableName': 'CloudNativeDAM_DB',
+                'IndexName': index_name,
+                'ExpressionAttributeNames': {'#P_ID': 'SK', '#U_NAME': 'Data', '#C_ID': 'ID'},
+                'ExpressionAttributeValues': {':Pid': {'S': 'PERMISSION#'},':Uname': {'S': json.loads(event.get('body')).get('principalUserName')},':Cid': {'S': cluster_id}},
+                'KeyConditionExpression': '#U_NAME = :Uname AND begins_with(#P_ID, :Pid)',
+                'FilterExpression': '#C_ID = :Cid'
+            }
+
+            items = query(query_params)
+            print(items)
+            if(len(items) != 0):
+                permission = items[0]
+                if(permission['Permissions']['S'] != json.loads(event.get('body')).get('permissions')):
+                    #permission already exists, need to update it
+                    table.update_item(
+                        Key={
+                            'ID': permission['ID']['S'],
+                            'SK': permission['SK']['S']
+                        },
+                        UpdateExpression="set #P=:p",
+                        ExpressionAttributeNames={
+                            '#P': "Permissions"
+                        },
+                        ExpressionAttributeValues={
+                            ':p': json.loads(event.get('body')).get('permissions')
+                        }
+                    )
+                    response_body = {
+                        'message': 'Permission updated successfully'
+                    }
+                    response = {
+                        'statusCode': 200,
+                        'body': json.dumps(response_body),
+                    }
+                    return response
+                else:
+                    response_body = {
+                        'message': 'Such permission already exists'
+                    }
+                    response = {
+                        'statusCode': 200,
+                        'body': json.dumps(response_body),
+                    }
+                    return response
+            else:
+                db_response = table.put_item(
+                    Item={
+                        'ID': json.loads(event.get('body')).get('clusterId'),
+                        'SK': 'PERMISSION#' + new_permission_id,
+                        'Data': json.loads(event.get('body')).get('principalUserName'),
+                        'GiverUserId': requester_cognito_user_id,
+                        'Permissions': json.loads(event.get('body')).get('permissions'),
+                        'ClusterOwnerUserName': event.get('requestContext').get('authorizer').get('jwt').get('claims').get('username'),
+                        'ClusterName': json.loads(event.get('body')).get('clusterName')
+                    }
+                )
+                response_body = {
+                    'message': 'Permission created successfully'
                 }
-            )
-            response_body = {
-                'message': 'Permission created successfully'
-            }
-            response = {
-                'statusCode': 200,
-                'body': json.dumps(response_body),
-            }
-            return response
+                response = {
+                    'statusCode': 200,
+                    'body': json.dumps(response_body),
+                }
+                return response
         except ClientError as e:
             print(e)
             response_body = {
