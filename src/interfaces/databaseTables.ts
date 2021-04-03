@@ -33,6 +33,7 @@ export interface Permission {
     permissionId?: string
     principalUserName?: string
     permissionGiverUserId?: string
+    permissionGiverUserName?: string
     permissions?: string
     clusterOwnerUserName?: string
 }

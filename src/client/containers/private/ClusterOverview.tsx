@@ -179,7 +179,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-            this.setState({coUsers: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], permissionId: item['SK']['S'], permissionGiverUserId: item['GiverUserId']['S'], permissions: item['Permissions']['S'], principalUserName: item['Data']['S']}})})
+            this.setState({coUsers: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], permissionId: item['SK']['S'], permissionGiverUserName: item['GiverUserName']['S'], permissions: item['Permissions']['S'], principalUserName: item['Data']['S']}})})
         }).catch(error => alert("ERROR: " + error))
     }
     //^
@@ -476,7 +476,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                     {/*    <option value="coconut">Кокос</option>*/}
                     {/*    <option value="mango">Манго</option>*/}
                     {/*</select>*/}
-                    <Form.Control onChange={this._onChangeCoUserId} type="string" placeholder="User Email"/>
+                    <Form.Control onChange={this._onChangeCoUserId} type="string" placeholder="User Name"/>
                     <Form.Label>Permissions for the user</Form.Label>
                     <Form.Check
                         type={"checkbox"}
@@ -517,7 +517,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
     );
 
     // @ts-ignore
-    MainComponent = ({ counter }) => (
+    MainComponent = ({ clusterCounter, permissionCounter }) => (
         <div className="MainComponent">
             {(this.state.permissions === '0000') ?
                 <div>
@@ -572,11 +572,11 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                         {this.state.files.map(
                             (fileMetadata: FileMetadata) =>
                                 <tr >
-                                    <td key={counter}>
-                                        {counter++}
+                                    <td key={clusterCounter}>
+                                        {clusterCounter++}
                                     </td>
-                                    <td onClick={() => this.downloadFile(fileMetadata.S3uniqueName, fileMetadata.cloud, fileMetadata.name)}>
-                                        {fileMetadata.name}
+                                    <td >
+                                        <Button onClick={() => this.downloadFile(fileMetadata.S3uniqueName, fileMetadata.cloud, fileMetadata.name)} variant="link">{fileMetadata.name}</Button>
                                     </td>
                                     <td>
                                         {fileMetadata.cloud}
@@ -611,9 +611,9 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                         <thead>
                         <tr>
                             <th>#</th>
-                            <th>User ID</th>
+                            <th>Principal user name</th>
                             <th>Permissions</th>
-                            <th>Permission giver user ID</th>
+                            <th>Permission giver user name</th>
                             <th>Delete</th>
                         </tr>
                         </thead>
@@ -621,8 +621,8 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                         {this.state.coUsers.map(
                             (couserData: Permission) =>
                                 <tr >
-                                    <td key={counter}>
-                                        {counter++}
+                                    <td key={permissionCounter}>
+                                        {permissionCounter++}
                                     </td>
                                     <td key={couserData.principalUserName}>
                                         {couserData.principalUserName}
@@ -631,7 +631,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                                         {couserData.permissions}
                                     </td>
                                     <td>
-                                        {couserData.permissionGiverUserId}
+                                        {couserData.permissionGiverUserName}
                                     </td>
                                     <td>
                                         <Button onClick={() => this.deleteCoUser(couserData)} variant="danger">X</Button>
@@ -649,9 +649,10 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
     render() {
 
-        let counter = 1
+        let clusterCounter = 1
+        let permissionCounter = 1
         return (
-            <this.MainComponent counter={counter}/>
+            <this.MainComponent clusterCounter={clusterCounter} permissionCounter={permissionCounter}/>
         )
     }
 }

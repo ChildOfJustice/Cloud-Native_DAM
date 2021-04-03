@@ -484,7 +484,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: MyLambdaFunction.handler
-      CodeUri: s3://sardor-test-code/3324bca4341e7ab5a6feaf93afc39215
+      CodeUri: s3://sardor-test-code/1417bdaf697b18a41e866d538ed06e51
   UsersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -494,7 +494,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersHandler.handler
-      CodeUri: s3://sardor-test-code/15e068712cff9926a2fcd0592ae9ace6
+      CodeUri: s3://sardor-test-code/f89058a9234b0ff3c626fd4918da3308
   UsersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -504,7 +504,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/79ba67b2b732e42538d73bd5d34ade44
+      CodeUri: s3://sardor-test-code/8cc5e7aac00bcc89ef9cd22e1fef13cb
   ClustersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -514,7 +514,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersHandler.handler
-      CodeUri: s3://sardor-test-code/eefbfedb2ed92e81188fab1b1ba7ddcd
+      CodeUri: s3://sardor-test-code/a002f727af1085968a6699f8a62a7709
   ClustersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -524,7 +524,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/5cba81b6dc8dcd2d6698adfe66bf6e90
+      CodeUri: s3://sardor-test-code/d1e89dac8b7ac69a9e3745b8ec978387
   FilesLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -534,7 +534,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: FilesHandler.handler
-      CodeUri: s3://sardor-test-code/e2c7b73dd80be4b0bdf8121eb4972a75
+      CodeUri: s3://sardor-test-code/46e72d94574e57a97e08ca133a489c99
   PermissionsLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -544,7 +544,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: PermissionsHandler.handler
-      CodeUri: s3://sardor-test-code/4f47c6e47d3c6bfeab50c1099450c269
+      CodeUri: s3://sardor-test-code/5ac75b814f4a25c3e0f4cc2e5ce88cd8
   AdminLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -554,7 +554,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: AdminHandler.handler
-      CodeUri: s3://sardor-test-code/2fa401161b6439388a92c35cc33b419b
+      CodeUri: s3://sardor-test-code/1386e7b10efd86f8b3ac0770b46132e8
   APIInvokeTestLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:

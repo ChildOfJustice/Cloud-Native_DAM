@@ -17,6 +17,7 @@ import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 import * as tokensService from "../../../store/demo/tokens.service";
 import Test from "../Test";
 import ClusterOverview from "./ClusterOverview";
+import {deleteFile} from "../../../interfaces/componentsFunctions";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;
@@ -213,6 +214,26 @@ class PersonalPage extends React.Component<ReduxType, IState> {
     }
     deleteUser = () => {
 
+        const { authToken } = this.props;
+
+        const fetchParams: FetchParams = {
+            url: '/files',
+            token: authToken,
+            method: 'GET',
+
+            actionDescription: "load all user files to delete them"
+        }
+
+        makeFetch<any>(fetchParams).then(jsonRes => {
+            console.log(jsonRes)
+            let files = jsonRes['items'].map((item:any, i:number) => {
+                return {id: item['SK']['S'], name: item['Name']['S'], S3uniqueName: item['S3uniqueName']['S'], cloud: item['Cloud']['S'], uploadedBy: item['UploadedBy']['S'], ownedBy: item['OwnedBy']['S'], sizeOfFile_MB: item['SizeOfFile_MB']['N'], tagsKeys: item['TagsKeys']['SS'], tagsValues: item['TagsValues']['SS']}})
+            for (const file of files) {
+                deleteFile(this, file.S3uniqueName, file.id)
+            }
+        }).catch(error => alert("ERROR: " + error))
+
+
         for (const cluster of this.state.clusters) {
             this.deleteCluster(cluster.clusterId)
         }
@@ -316,6 +337,11 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                 {/*Your user id is: "{this.state.userId}".<br/>*/}
                 Your role is: "{this.state.userRole}".<br/>
                 Your current used storage size is {this.state.usedStorageSize} MB.
+
+                <LinkContainer to="/private/searchFiles">
+                    <Button variant="info">My files</Button>
+                </LinkContainer>
+
 
                 <Test authToken={this.props.authToken}/>
                 <Form.Group controlId="ClusterName">

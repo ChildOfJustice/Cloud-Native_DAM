@@ -96,12 +96,23 @@ def handler(event, context):
         return response
     if(event.get('routeKey').startswith('GET')):
         if(event.get('queryStringParameters') is None):
+            # Return all files for the user
+            query_params = {
+                'TableName': 'CloudNativeDAM_DB',
+                'IndexName': index_name,
+                #'ProjectionExpression': "SK",                       
+                'ExpressionAttributeNames': {'#U_ID': 'Data', '#SK': 'SK'},
+                'ExpressionAttributeValues': {':Uid': {'S': requester_cognito_user_id},':sk': {'S': 'FILE#'}},
+                'KeyConditionExpression': '#U_ID = :Uid AND begins_with(#SK, :sk)'
+            }
+            items = query(query_params)
+            
             response_body = {
-                'error': 'no queryparams'
+                'items': items
             }
 
             response = {
-                'statusCode': 400,
+                'statusCode': 200,
                 'body': json.dumps(response_body),
             }
             return response

@@ -12,6 +12,7 @@ import UploadFile from "./private/UploadFile";
 import PersonalPage from "./private/PersonalPage";
 import ClusterOverview from "./private/ClusterOverview";
 import SharedWithMeClusters from "./private/SharedWithMeClusters";
+import SearchFiles from "./private/SearchFiles";
 // import Amplify, { Auth } from 'aws-amplify';
 //
 // Amplify.configure({
@@ -64,6 +65,7 @@ class App extends React.Component {
                         <Route exact path='/private/clusters/:clusterId' component={ClusterOverview}/>
                         <Route path='/private/area' component={PersonalPage}/>
                         <Route path='/private/sharedWithMeClusters' component={SharedWithMeClusters}/>
+                        <Route path='/private/searchFiles' component={SearchFiles}/>
                         <Route path='/private/uploadFile/:clusterId' component={UploadFile}/>
                         <Route path='/test' component={Test}/>
                     </Switch>
