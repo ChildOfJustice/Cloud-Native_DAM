@@ -1,7 +1,7 @@
 import Jumbotron from "react-bootstrap/Jumbotron";
 import * as React from "react";
 import * as AWS from "aws-sdk"
-import { v4 as uuidv4 } from 'uuid'
+import {v4 as uuidv4} from 'uuid'
 
 import config from "../../../config";
 import {IRootState} from "../../../store";
@@ -31,9 +31,11 @@ const mapDispatcherToProps = (dispatch: Dispatch<DemoActions>) => {
         loadStore: () => storeService.loadStore(dispatch),
     }
 }
+
 interface IProps {
     clusterId: string
 }
+
 type ReduxType = IProps & ReturnType<typeof mapStateToProps> & ReturnType<typeof mapDispatcherToProps>;
 
 
@@ -58,12 +60,12 @@ class UploadFile extends React.Component<ReduxType, IState> {
 
     async checkStorageSizeLimitation(fileSize: number) {
 
-        if (fileSize >= config.AppConfig.maxUserStorageSize_MB){
+        if (fileSize >= config.AppConfig.maxUserStorageSize_MB) {
             this.setState({canUpload: false})
             return
         }
 
-        const { authToken } = this.props;
+        const {authToken} = this.props;
 
         let fetchParams: FetchParams = {
             url: '/files/?calcUsedSize=true',
@@ -75,13 +77,13 @@ class UploadFile extends React.Component<ReduxType, IState> {
 
         let jsonRes = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
 
-        if(fileSize + parseFloat(jsonRes['usedStorageSize']) < config.AppConfig.maxUserStorageSize_MB)
+        if (fileSize + parseFloat(jsonRes['usedStorageSize']) < config.AppConfig.maxUserStorageSize_MB)
             this.setState({canUpload: true})
         else
             this.setState({canUpload: false})
     }
 
-     uploadFile = () => {
+    uploadFile = () => {
         let cloudCombobox = document.getElementById("cloudCombobox");
         // @ts-ignore
         let itemValue = cloudCombobox.options[cloudCombobox.selectedIndex].value;
@@ -109,35 +111,34 @@ class UploadFile extends React.Component<ReduxType, IState> {
         otherTags.push([defaultTagKey3, defaultTagValue3]);
 
 
-
         for (let i = 0; i < this.tagIndex; i++) {
             // @ts-ignore
-            var element = [document.getElementById('tagKey'+(i+1)).value, document.getElementById('tagValue'+(i+1)).value];
-            if(element[0] !== ""){
+            var element = [document.getElementById('tagKey' + (i + 1)).value, document.getElementById('tagValue' + (i + 1)).value];
+            if (element[0] !== "") {
                 userTagsKeys.push(element[0])
                 userTagsValues.push(element[1])
                 otherTags.push(element);
             }
         }
 
-        function compare( a: any[], b: any[] ) {
-            if ( a[0] < b[0] ){
+        function compare(a: any[], b: any[]) {
+            if (a[0] < b[0]) {
                 return -1;
             }
-            if ( a[0] > b[0] ){
+            if (a[0] > b[0]) {
                 return 1;
             }
             return 0;
         }
 
-        otherTags.sort( compare );
+        otherTags.sort(compare);
 
 
-        if(itemValue === "AWS"){
+        if (itemValue === "AWS") {
             // @ts-ignore
             var files = document.getElementById('fileToUpload').files;
             var file = files[0];
-            if(typeof file == "undefined" || typeof file.name == "undefined"){
+            if (typeof file == "undefined" || typeof file.name == "undefined") {
                 alert("Choose the file first");
             }
 
@@ -157,7 +158,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
             };
 
 
-            this.checkStorageSizeLimitation(metadata.sizeOfFile_MB).then( () => {
+            this.checkStorageSizeLimitation(metadata.sizeOfFile_MB).then(() => {
 
                 if (!this.state.canUpload) {
                     //TODO beautiful error message with offer to buy some free space
@@ -167,8 +168,6 @@ class UploadFile extends React.Component<ReduxType, IState> {
 
 
                 // this.createFileClusterSubRecord(metadata)
-
-
 
 
                 //AWS initialization:
@@ -189,14 +188,14 @@ class UploadFile extends React.Component<ReduxType, IState> {
                 };
                 const canonicalTagArray = [];
                 for (let i = 0; i < otherTags.length; i++) {
-                    var element2 =  {Key: otherTags[i][0], Value: otherTags[i][1]};
+                    var element2 = {Key: otherTags[i][0], Value: otherTags[i][1]};
                     canonicalTagArray.push(element2);
                 }
-                if(canonicalTagArray.length === 0){
+                if (canonicalTagArray.length === 0) {
                     var upload = new AWS.S3.ManagedUpload({
                         params: params
                     });
-                } else{
+                } else {
                     var upload = new AWS.S3.ManagedUpload({
                         params: params,
                         tags: canonicalTagArray
@@ -206,13 +205,13 @@ class UploadFile extends React.Component<ReduxType, IState> {
                 var localThis = this
                 var promise = upload.promise();
                 promise.then(
-                    function(data) {
+                    function (data) {
                         alert("File uploaded successfully.");
                         //window.close();
 
                         localThis.createFileClusterSubRecord(metadata)
                     },
-                    function(err) {
+                    function (err) {
                         console.log(err.message);
                         return alert("There was an error: " + err.message);
                     }
@@ -294,7 +293,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
     }
 
     createFileClusterSubRecord = (metadata: FileMetadata) => {
-        const { authToken } = this.props;
+        const {authToken} = this.props;
 
         const fetchParams: FetchParams = {
             url: '/files',
@@ -318,54 +317,54 @@ class UploadFile extends React.Component<ReduxType, IState> {
     }
 
     render() {
-    return (
-        <Jumbotron>
-            <title>Upload file to cloud</title>
-            <h1>Choose file for uploading to cloud</h1>
-            <div>
-                <input type="file" id="fileToUpload"/>
-            </div>
-            <select id="cloudCombobox" name="Cloud">
-                <option value="AWS">AWS</option>
-                <option value="Azure">Azure</option>
-            </select>
+        return (
+            <Jumbotron>
+                <title>Upload file to cloud</title>
+                <h1>Choose file for uploading to cloud</h1>
+                <div>
+                    <input type="file" id="fileToUpload"/>
+                </div>
+                <select id="cloudCombobox" name="Cloud">
+                    <option value="AWS">AWS</option>
+                    <option value="Azure">Azure</option>
+                </select>
 
-            <div className="tagsDiv">
-                <table id="tableForTags" className="tagsTable">
-                    <tr>
-                        <td>Key</td>
-                        <td>Value</td>
-                    </tr>
-                    <tr>
-                        <td><input value="uploadedby" id="defaultTagKey1" type="text" size={40} readOnly/></td>
-                        <td><input id="defaultTagValue1" type="text" size={40}/></td>
-                    </tr>
-                    <tr>
-                        <td><input value="ownedby" id="defaultTagKey2" type="text" size={40} readOnly/></td>
-                        <td><input id="defaultTagValue2" type="text" size={40}/></td>
-                    </tr>
-                    <tr>
-                        <td><input value="category" id="defaultTagKey3" type="text" size={40} readOnly/></td>
-                        <td><input id="defaultTagValue3" type="text" size={40}/></td>
-                    </tr>
+                <div className="tagsDiv">
+                    <table id="tableForTags" className="tagsTable">
+                        <tr>
+                            <td>Key</td>
+                            <td>Value</td>
+                        </tr>
+                        <tr>
+                            <td><input value="uploadedby" id="defaultTagKey1" type="text" size={40} readOnly/></td>
+                            <td><input id="defaultTagValue1" type="text" size={40}/></td>
+                        </tr>
+                        <tr>
+                            <td><input value="ownedby" id="defaultTagKey2" type="text" size={40} readOnly/></td>
+                            <td><input id="defaultTagValue2" type="text" size={40}/></td>
+                        </tr>
+                        <tr>
+                            <td><input value="category" id="defaultTagKey3" type="text" size={40} readOnly/></td>
+                            <td><input id="defaultTagValue3" type="text" size={40}/></td>
+                        </tr>
 
-                    <tr>
-                        <td><input id="tagKey1" type="text" size={40}/></td>
-                        <td><input id="tagValue1" type="text" size={40}/></td>
-                    </tr>
-                </table>
-            </div>
-
-
-            <button onClick={this.addTag}>Add Tag</button>
+                        <tr>
+                            <td><input id="tagKey1" type="text" size={40}/></td>
+                            <td><input id="tagValue1" type="text" size={40}/></td>
+                        </tr>
+                    </table>
+                </div>
 
 
-            <div>
-                <Button onClick={this.uploadFile} variant="primary">Upload File</Button>
-            </div>
+                <button onClick={this.addTag}>Add Tag</button>
 
 
-        </Jumbotron>
+                <div>
+                    <Button onClick={this.uploadFile} variant="primary">Upload File</Button>
+                </div>
+
+
+            </Jumbotron>
         );
     }
 }

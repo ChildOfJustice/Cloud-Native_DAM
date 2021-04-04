@@ -1,39 +1,38 @@
 import * as React from "react";
-
-import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import {FetchParams, makeFetch} from "../../interfaces/FetchInterface";
-import {History} from "history";
 
 interface IProps {
     //history: History
     authToken: string
     /* other props for ChildComponent */
 }
+
 interface IState {
 
 }
 
 export default class Test extends React.Component<IProps, IState> {
     // Initialize the state
-    constructor(props: IProps){
+    constructor(props: IProps) {
         super(props);
         this.state = {
             msg: ''
         }
     }
+
     // Fetch the text on first mount
     componentDidMount() {
         //this.getText();
 
     }
+
     // Retrieves the list of items from the Express app
     getText = () => {
         fetch('/api/test')
             .then(res => res.json())
-            .then(msg => this.setState({ msg }))
+            .then(msg => this.setState({msg}))
     }
-
 
 
     testCode = (event: any) => {

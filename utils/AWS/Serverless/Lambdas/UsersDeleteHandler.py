@@ -30,7 +30,7 @@ def handler(event, context):
             db_response = table.delete_item(
                 Key={
                     'ID': requester_cognito_user_id,
-                    'SK': 'USER'
+                    'SK': requester_cognito_user_id
                 }
             )
             response_body = {

@@ -16,97 +16,128 @@ def handler(event, context):
     requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
     
     if(event.get('routeKey').startswith('POST')):
-        #POST add a new file to cluster
-        new_file_id = str(uuid.uuid4())
-        try:
-            cluster_id = json.loads(event.get('body')).get('clusterId')
-            if(cluster_id == '' or (cluster_id is None)):
-                raise ValueError('Cluster id cannot be empty')
-        except ValueError as e:
-            
+        if(json.loads(event.get('body')).get('action') is None):
+            #POST add a new file to cluster
+            new_file_id = str(uuid.uuid4())
+            try:
+                cluster_id = json.loads(event.get('body')).get('clusterId')
+                if(cluster_id == '' or (cluster_id is None)):
+                    raise ValueError('Cluster id cannot be empty')
+            except ValueError as e:
+
+                response_body = {
+                    'message': str(e)
+                }
+                response = {
+                    'statusCode': 400,
+                    'body': json.dumps(response_body),
+                }
+                return response
+
+            tag_keys_list = json.loads(event.get('body')).get('tagsKeys')
+            if(len(tag_keys_list) == 0):
+                tag_keys_list.append("")
+            tag_values_list = json.loads(event.get('body')).get('tagsValues')
+            if(len(tag_values_list) == 0):
+                tag_values_list.append("")
+            #print(tag_keys_list) WILL BE [""]
+            #print(json.loads(event.get('body')).get('tagsKeys').append("")) WILL BE None !!!!!!!!!!! (Python and web are the worst)
+            try:
+                db_response = client.transact_write_items(
+                    TransactItems=[
+                        {
+                            'Put': {
+                                'Item': json.loads(json.dumps({
+                                    'ID': { 'S': 'FILE#' + new_file_id },
+                                    'SK': { 'S': 'FILE#' + new_file_id },
+                                    'Data': { 'S': requester_cognito_user_id },
+                                    'Name': { 'S': json.loads(event.get('body')).get('name') },
+                                    'S3uniqueName': { 'S': json.loads(event.get('body')).get('S3uniqueName') },
+                                    'Cloud': { 'S': json.loads(event.get('body')).get('cloud') },
+                                    'OwnedBy': { 'S': json.loads(event.get('body')).get('ownedBy') },
+                                    'UploadedBy': { 'S': json.loads(event.get('body')).get('uploadedBy') },
+                                    'SizeOfFile_MB': { 'N': str(float(json.loads(event.get('body')).get('sizeOfFile_MB'))) },
+                                    'TagsKeys': { 'SS': tag_keys_list },
+                                    'TagsValues': { 'SS': tag_values_list }
+                                }), parse_float=Decimal),
+                                'TableName': table_name
+                            }
+                        },
+                        {
+                            'Put': {
+                                'Item': {
+                                    'ID': { 'S': cluster_id },
+                                    'SK': { 'S': 'FILE#' + new_file_id },
+                                    'FileName': { 'S': json.loads(event.get('body')).get('name') }
+                                },
+                                'TableName': table_name
+                            }
+                        }
+                    ]
+                )
+
+            except ClientError as e:
+                print(e)
+                response_body = {
+                    'message': e.response['Error']['Code']
+                }
+                response = {
+                    'statusCode': 500,
+                    'body': json.dumps(response_body),
+                }
+                return response
+
             response_body = {
-                'message': str(e)
+                'message': 'new file added to cluster successfully'
             }
+
             response = {
-                'statusCode': 400,
+                'statusCode': 200,
                 'body': json.dumps(response_body),
             }
             return response
-        
-        tag_keys_list = json.loads(event.get('body')).get('tagsKeys')
-        if(len(tag_keys_list) == 0):
-            tag_keys_list.append("")
-        tag_values_list = json.loads(event.get('body')).get('tagsValues')
-        if(len(tag_values_list) == 0):
-            tag_values_list.append("")
-        #print(tag_keys_list) WILL BE [""]
-        #print(json.loads(event.get('body')).get('tagsKeys').append("")) WILL BE None !!!!!!!!!!! (Python and web are the worst)
-        try:
-            db_response = client.transact_write_items(
-                TransactItems=[
-                    {
-                        'Put': {
-                            'Item': json.loads(json.dumps({
-                                'ID': { 'S': 'FILE#' + new_file_id },
-                                'SK': { 'S': 'FILE#' + new_file_id },
-                                'Data': { 'S': requester_cognito_user_id },
-                                'Name': { 'S': json.loads(event.get('body')).get('name') },
-                                'S3uniqueName': { 'S': json.loads(event.get('body')).get('S3uniqueName') },
-                                'Cloud': { 'S': json.loads(event.get('body')).get('cloud') },
-                                'OwnedBy': { 'S': json.loads(event.get('body')).get('ownedBy') },
-                                'UploadedBy': { 'S': json.loads(event.get('body')).get('uploadedBy') },
-                                'SizeOfFile_MB': { 'N': str(float(json.loads(event.get('body')).get('sizeOfFile_MB'))) },
-                                'TagsKeys': { 'SS': tag_keys_list },
-                                'TagsValues': { 'SS': tag_values_list }
-                            }), parse_float=Decimal),
-                            'TableName': table_name
-                        }
-                    },
-                    {
-                        'Put': {
-                            'Item': {
-                                'ID': { 'S': cluster_id },
-                                'SK': { 'S': 'FILE#' + new_file_id },
-                                'FileName': { 'S': json.loads(event.get('body')).get('name') }                   
-                            },
-                            'TableName': table_name
-                        }
+        elif(json.loads(event.get('body')).get('action') == 'addFileToCluster'):
+            try:
+                db_response = table.put_item(
+                    Item={
+                        'ID': json.loads(event.get('body')).get('clusterId'),
+                        'SK': json.loads(event.get('body')).get('fileId'),
+                        'FileName': json.loads(event.get('body')).get('fileName'),
                     }
-                ]
-            )
-            
-        except ClientError as e:
-            print(e)
-            response_body = {
-                'message': e.response['Error']['Code']
-            }
-            response = {
-                'statusCode': 500,
-                'body': json.dumps(response_body),
-            }
-            return response
-        
-        response_body = {
-            'message': str(db_response)
-        }
-        response = {
-            'statusCode': 200,
-            'body': json.dumps(response_body),
-        }
-        return response
+                )
+                response_body = {
+                    'message': 'file-cluster sub record created successfully'
+                }
+
+                response = {
+                    'statusCode': 200,
+                    'body': json.dumps(response_body),
+                }
+                return response
+            except ClientError as e:
+                print(e)
+                response_body = {
+                    'message': e.response['Error']['Code']
+                }
+                response = {
+                    'statusCode': 500,
+                    'body': json.dumps(response_body),
+                }
+                return response
+
     if(event.get('routeKey').startswith('GET')):
         if(event.get('queryStringParameters') is None):
             # Return all files for the user
             query_params = {
                 'TableName': 'CloudNativeDAM_DB',
                 'IndexName': index_name,
-                #'ProjectionExpression': "SK",                       
+                #'ProjectionExpression': "SK",
                 'ExpressionAttributeNames': {'#U_ID': 'Data', '#SK': 'SK'},
                 'ExpressionAttributeValues': {':Uid': {'S': requester_cognito_user_id},':sk': {'S': 'FILE#'}},
                 'KeyConditionExpression': '#U_ID = :Uid AND begins_with(#SK, :sk)'
             }
             items = query(query_params)
-            
+
             response_body = {
                 'items': items
             }
@@ -116,7 +147,7 @@ def handler(event, context):
                 'body': json.dumps(response_body),
             }
             return response
-        
+
         else:
             try:
                 if(event.get('queryStringParameters').get('calcUsedSize') == 'true'):
@@ -134,7 +165,7 @@ def handler(event, context):
                     used_storage_size = 0
                     for item in user_files:
                         used_storage_size += float(item['SizeOfFile_MB']['N'])
-                    
+
                     response_body = {
                         'usedStorageSize': used_storage_size
                     }
@@ -144,22 +175,22 @@ def handler(event, context):
                         'body': json.dumps(response_body),
                     }
                     return response
-                
+
                 if(event.get('queryStringParameters').get('clusterId') is not None):
                     # Return all files metadata for the files in the cluster
                     files_metadata = []
                     query_params = {
-                        'TableName': 'CloudNativeDAM_DB', 
-                        'ProjectionExpression': "SK",                       
+                        'TableName': 'CloudNativeDAM_DB',
+                        'ProjectionExpression': "SK",
                         'ExpressionAttributeNames': {'#C_ID': 'ID', '#SK': 'SK'},
                         'ExpressionAttributeValues': {':Cid': {'S': event.get('queryStringParameters').get('clusterId')},':sk': {'S': 'FILE#'}},
                         'KeyConditionExpression': '#C_ID = :Cid AND begins_with(#SK, :sk)'
                     }
                     items = query(query_params)
-                    
+
                     for item in items:
                         query_params = {
-                            'TableName': 'CloudNativeDAM_DB',                      
+                            'TableName': 'CloudNativeDAM_DB',
                             'ExpressionAttributeNames': {'#F_ID': 'ID', '#SK': 'SK'},
                             'ExpressionAttributeValues': {':Fid': {'S': item['SK']['S']},':sk': {'S': item['SK']['S']}},
                             'KeyConditionExpression': '#F_ID = :Fid AND #SK = :sk'
@@ -194,7 +225,7 @@ def handler(event, context):
                 }
                 return response
     if(event.get('routeKey').startswith('DELETE')):
-        
+        print(json.loads(event.get('body')))
         file_id = json.loads(event.get('body')).get('fileId')
         cluster_id = json.loads(event.get('body')).get('clusterId')
         if(cluster_id is None):

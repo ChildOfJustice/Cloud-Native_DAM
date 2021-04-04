@@ -6,8 +6,6 @@ from botocore.exceptions import ClientError
 def handler(event, context):
     table = boto3.resource("dynamodb").Table("CloudNativeDAM_DB")
     index_name = "Data-index"
-
-    print(event)
     # while True:
     #     if (
     #         not table.global_secondary_indexes

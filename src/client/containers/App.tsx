@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { Switch, Route } from 'react-router-dom';
+import {Route, Switch} from 'react-router-dom';
 
 import Container from 'react-bootstrap/Container';
 import Navbar from "react-bootstrap/Navbar";
-import { LinkContainer } from 'react-router-bootstrap';
+import {LinkContainer} from 'react-router-bootstrap';
 
 import Home from "./Home"
 import Test from "./Test"

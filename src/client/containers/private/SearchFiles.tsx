@@ -1,6 +1,4 @@
 import * as React from "react";
-
-import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 
 import {connect} from 'react-redux';
@@ -9,20 +7,18 @@ import {Dispatch} from 'redux';
 import * as storeService from '../../../store/demo/store.service'
 import {DemoActions} from '../../../store/demo/types';
 import {Table} from "react-bootstrap";
-import {LinkContainer} from "react-router-bootstrap";
-import Navbar from "react-bootstrap/Navbar";
-import {Permission, FileMetadata, Cluster} from "../../../interfaces/databaseTables";
+import {Cluster, Permission} from "../../../interfaces/databaseTables";
 import {FileOverviewType} from "../../../interfaces/componentsTypes";
 import FileOverview from "../../components/FileOverview";
 import * as AWS from "aws-sdk";
 import config from "../../../config";
 import {History} from "history";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
-import {deleteFile} from "../../../interfaces/componentsFunctions";
+import {downloadFile, getAllUserClusters} from "../../../interfaces/componentsFunctions";
 
-const mapStateToProps = ({ demo }: IRootState) => {
-    const { authToken, idToken, loading } = demo;
-    return { authToken, idToken, loading };
+const mapStateToProps = ({demo}: IRootState) => {
+    const {authToken, idToken, loading} = demo;
+    return {authToken, idToken, loading};
 }
 
 //to use any action you need to add dispatch as an argument to a function!!
@@ -34,12 +30,14 @@ const mapDispatcherToProps = (dispatch: Dispatch<DemoActions>) => {
 
 interface IState {
     filesOverviews: FileOverviewType[]
-    chosenClusterId: string
+    chosenClusterId: string | undefined
     clusters: Cluster[]
+    permissions: Permission[]
     //searchCriterion
 }
+
 interface IProps {
-    history : History
+    history: History
 }
 
 
@@ -47,15 +45,10 @@ type ReduxType = IProps & ReturnType<typeof mapStateToProps> & ReturnType<typeof
 
 class SearchFiles extends React.Component<ReduxType, IState> {
     public state: IState = {
-        // filesOverviews: [
-        //     {id: 1, value: "banana", isChecked: false},
-        //     {id: 2, value: "apple", isChecked: false},
-        //     {id: 3, value: "mango", isChecked: false},
-        //     {id: 4, value: "grap", isChecked: false}
-        // ]
         chosenClusterId: '',
         filesOverviews: [],
-        clusters: []
+        clusters: [],
+        permissions: []
     }
 
 
@@ -64,10 +57,14 @@ class SearchFiles extends React.Component<ReduxType, IState> {
         await this.props.loadStore()
 
         this.getUserFiles()
+        const setState = this.setState.bind(this)
+        await getAllUserClusters(this.props, setState)
+        await this.getAllSharedClusters()
     }
+
     //Initialization functions
     getUserFiles = () => {
-        const { authToken } = this.props;
+        const {authToken} = this.props;
 
         const fetchParams: FetchParams = {
             url: '/files',
@@ -79,63 +76,191 @@ class SearchFiles extends React.Component<ReduxType, IState> {
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-            this.setState({filesOverviews: jsonRes['items'].map((item:any, i:number) => {
-                return {id: i, isChecked: false, file: {id: item['SK']['S'], name: item['Name']['S'], S3uniqueName: item['S3uniqueName']['S'], cloud: item['Cloud']['S'], uploadedBy: item['UploadedBy']['S'], ownedBy: item['OwnedBy']['S'], sizeOfFile_MB: item['SizeOfFile_MB']['N'], tagsKeys: item['TagsKeys']['SS'], tagsValues: item['TagsValues']['SS'], }}})})
+            this.setState({
+                filesOverviews: jsonRes['items'].map((item: any, i: number) => {
+                    return {
+                        id: i,
+                        isChecked: false,
+                        file: {
+                            id: item['SK']['S'],
+                            name: item['Name']['S'],
+                            S3uniqueName: item['S3uniqueName']['S'],
+                            cloud: item['Cloud']['S'],
+                            uploadedBy: item['UploadedBy']['S'],
+                            ownedBy: item['OwnedBy']['S'],
+                            sizeOfFile_MB: item['SizeOfFile_MB']['N'],
+                            tagsKeys: item['TagsKeys']['SS'],
+                            tagsValues: item['TagsValues']['SS'],
+                        }
+                    }
+                })
+            })
         }).catch(error => alert("ERROR: " + error))
 
     }
-    getAllUserClusters = () => {
-        const { authToken } = this.props;
-        if (authToken === '') {
-            return
-        }
+    getAllSharedClusters = async () => {
+
+        const {authToken} = this.props;
 
         let fetchParams: FetchParams = {
-            url: '/clusters',
+            url: '/permissions?action=getUserPermissions',
             token: authToken,
             method: 'GET',
-            actionDescription: "get all user's clusters"
+
+            actionDescription: "get all user permissions"
         }
 
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
+        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log(promiseJson)
 
-            this.setState({clusters: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], name: item['Name']['S']}})})
-        }).catch(error => alert("ERROR: " + error))
+        let clusters = this.state.clusters
+        let permissions = promiseJson['items'].map((item: any, i: number) => {
+            return {
+                clusterId: item['ID']['S'],
+                permissionId: item['SK']['S'],
+                principalUserId: item['Data']['S'],
+                permissionGiverUserId: item['GiverUserId']['S'],
+                permissions: item['Permissions']['S'],
+                clusterOwnerUserName: item['ClusterOwnerUserName']['S'],
+                clusterName: item['ClusterName']['S']
+            }
+        })
+
+        for (const permission of permissions) {
+            clusters.push({
+                clusterId: permission.clusterId,
+                name: permission.clusterName,
+                ownerUserName: permission.clusterOwnerUserName
+            })
+        }
+        this.setState({clusters: clusters})
+        if (clusters.length !== 0) {
+            this.setState({chosenClusterId: clusters[0].clusterId})
+        }
     }
     //^
 
-    handleAddAllFilesToCluster = () => {
-        //TODO
-    }
-    handleDeleteAllFiles = () => {
-        //TODO
-    }
 
-    downloadFile = (fileKey:string, cloud:string, fileName:string) => {
-        console.log("Trying to download file: " + fileName)
-        if (cloud === 'AWS'){
+    deleteFile = (sender: any, S3uniqueName: string, fileId?: number) => {
+        if (fileId === undefined) {
+            alert("File ID cannot be undefined.")
+            return
+        }
 
-            AWS.config.region = config.AWS.region;
-            AWS.config.credentials = new AWS.Credentials(config.AWS.S3.accessKeyId, config.AWS.S3.secretAccessKey);
+        // eslint-disable-next-line no-restricted-globals
+        let deleteFile = confirm("Delete the file from the cloud?");
+        if (deleteFile) {
+            console.log("Trying to delete file: " + S3uniqueName)
 
-            let s3 = new AWS.S3({
+            AWS.config.update({
+                region: config.AWS.S3.bucketRegion,
+                credentials: new AWS.Credentials(config.AWS.S3.accessKeyId, config.AWS.S3.secretAccessKey)
+            });
+
+
+            const s3 = new AWS.S3({
                 apiVersion: '2006-03-01',
                 params: {Bucket: config.AWS.S3.bucketName}
             });
 
-            let promise = s3.getSignedUrlPromise('getObject', {
-                Bucket: config.AWS.S3.bucketName,
-                Key: fileKey,
-                ResponseContentDisposition: 'attachment; filename ="' + fileName + '"'
-            });
-            promise.then((url) => {
-                window.open( url, '_blank' );// + '?response-content-disposition=attachment;filename='+fileName
-            }, (err) => { alert("Error with downloading your file: " + err) });
+            const params = {Bucket: config.AWS.S3.bucketName, Key: S3uniqueName};
+
+            var localThis = sender
+            s3.deleteObject(params, function (err, data) {
+                if (err) {
+                    alert("Cannot delete this file from S3 bucket!")
+                    console.log(err, err.stack);
+                } else {
+                    console.log();
+                    alert("File has been deleted from the cloud.")
+                    localThis.deleteFilePermanently(fileId)
+                }
+            })
         }
     }
+    deleteFilePermanently = (fileId?: number) => {
+        const {authToken} = this.props;
+
+        let fileData = {
+            fileId: fileId
+        }
+        const fetchParams: FetchParams = {
+            url: '/files',
+            token: authToken,
+            method: 'DELETE',
+            body: fileData,
+
+            actionDescription: "delete file and its metadata"
+        }
+
+        makeFetch<string>(fetchParams).then(jsonRes => {
+            console.log(jsonRes)
+            console.log("Successfully deleted the file")
+            this.getUserFiles()
+        }).catch(error => alert("ERROR: " + error))
+    }
+
+    handleAddChosenFilesToCluster = async () => {
+
+        const {authToken} = this.props;
+
+        let filesOverviews = this.state.filesOverviews
+        for (const filesOverview of filesOverviews) {
+            if (filesOverview.isChecked) {
+
+                let body = {
+                    action: 'addFileToCluster',
+                    clusterId: this.state.chosenClusterId,
+                    fileId: filesOverview.file.id,
+                    fileName: filesOverview.file.name
+                }
+
+                const fetchParams: FetchParams = {
+                    url: '/files',
+                    token: authToken,
+                    method: 'POST',
+                    body: body,
+
+                    actionDescription: "create file-cluster sub record"
+                }
 
 
+                let promiseJson = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+                console.log(promiseJson)
+            }
+        }
+        alert("All chosen file have been added to the cluster.")
+
+    }
+    handleDeleteChosenFilesFromCluster = async () => {
+        let clusterId_ = this.state.chosenClusterId
+
+        const {authToken} = this.props;
+
+        let filesOverviews = this.state.filesOverviews
+        for (const filesOverview of filesOverviews) {
+            if (filesOverview.isChecked) {
+                let fileData = {
+                    fileId: filesOverview.file.id,
+                    clusterId: clusterId_
+                }
+                const fetchParams: FetchParams = {
+                    url: '/files',
+                    token: authToken,
+                    method: 'DELETE',
+                    body: fileData,
+
+                    actionDescription: "delete the file-cluster record"
+                }
+
+                let promise = await makeFetch<string>(fetchParams).catch(error => alert("ERROR: " + error))
+                console.log(promise)
+
+            }
+        }
+
+        alert("All chosen file have been removed from the cluster.")
+    }
 
     handleAllChecked = (event: any) => {
         let filesOverviews = this.state.filesOverviews
@@ -144,10 +269,16 @@ class SearchFiles extends React.Component<ReduxType, IState> {
     }
 
     handleCheckChildElement = (event: any) => {
+
         let filesOverviews = this.state.filesOverviews
         filesOverviews.forEach(filesOverview => {
-            if (filesOverview.id === event.target.id)
-                filesOverview.isChecked =  event.target.checked
+            //alert("WATCH this " + event.target.value + " and file's value: " + filesOverview.id + "and ischecked: " + event.target.checked)
+            let filesOverviewIdInt: number = +filesOverview.id
+            let eventTargetValueInt: number = +event.target.value
+            if (filesOverviewIdInt === eventTargetValueInt) {
+                filesOverview.isChecked = event.target.checked
+            }
+
         })
         this.setState({filesOverviews: filesOverviews})
     }
@@ -156,15 +287,10 @@ class SearchFiles extends React.Component<ReduxType, IState> {
         this.setState({chosenClusterId: event.target.value});
     }
 
-    handleChooseCluster = (event: any) => {
-        alert('Ваш любимый Cluster: ' + this.state.chosenClusterId);
-        event.preventDefault();
-    }
-
     // @ts-ignore
-    MainComponent = ({ counter }) => (
+    MainComponent = ({counter}) => (
         <div className="MainComponent">
-            <form onSubmit={this.handleChooseCluster}>
+            <form>
                 <label>
                     Choose a cluster to add/remove files from:
                     <select value={this.state.chosenClusterId} onChange={this.handleSelectClusterChange}>
@@ -175,21 +301,28 @@ class SearchFiles extends React.Component<ReduxType, IState> {
                         }
                     </select>
                 </label>
-                <input type="submit" value="Отправить" />
+                {/*<input type="submit" value="Отправить" />*/}
             </form>
+            <Button onClick={this.handleAddChosenFilesToCluster} variant="success">
+                Add
+            </Button>
+            <Button onClick={this.handleDeleteChosenFilesFromCluster} variant="warning">
+                Remove
+            </Button>
             <div>
                 <h1> Your files </h1>
-                <input type="checkbox" onChange={this.handleAllChecked}  value="checkedall" /> Check / Uncheck All
+                <input type="checkbox" onChange={this.handleAllChecked} value="checkedall"/> Check / Uncheck All
                 <Table striped bordered hover variant="dark">
                     <thead>
                     <tr>
                         <th>#</th>
+                        <th>Chosen</th>
                         <th>File Name</th>
                         <th>Cloud provider</th>
                         <th>File owner</th>
                         <th>Uploaded by</th>
                         <th>File size (MBs)</th>
-                        <th>    User</th>
+                        <th> User</th>
                         <th>Tags</th>
                         <th>Delete</th>
                     </tr>
@@ -197,7 +330,10 @@ class SearchFiles extends React.Component<ReduxType, IState> {
                     <tbody>
                     {
                         this.state.filesOverviews.map((fileOverview, index) => {
-                            return (<FileOverview key={index} parent={this} handleCheckChildElement={this.handleCheckChildElement} handleDownloadFile={this.downloadFile} value={fileOverview} />)
+                            return (<FileOverview key={index} parent={this}
+                                                  handleCheckChildElement={this.handleCheckChildElement}
+                                                  handleDownloadFile={downloadFile} handleDeleteFile={this.deleteFile}
+                                                  value={fileOverview}/>)
                         })
                     }
                     </tbody>

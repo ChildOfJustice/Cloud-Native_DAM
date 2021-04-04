@@ -17,9 +17,9 @@ export interface File_ClusterSub {
 }
 
 export interface Cluster {
-    clusterId?: number
+    clusterId?: string
     name?: string
-    ownerUserId?: string
+    ownerUserName?: string
     // createdDate: string
 }
 

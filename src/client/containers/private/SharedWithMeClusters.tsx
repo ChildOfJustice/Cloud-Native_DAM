@@ -45,7 +45,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
     getAllSharedClusters = () => {
 
-        const { authToken } = this.props;
+        const {authToken} = this.props;
 
         let fetchParams: FetchParams = {
             url: '/permissions?action=getUserPermissions',
@@ -57,7 +57,19 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         makeFetch<any>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-            this.setState({permissions: jsonRes['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], permissionId: item['SK']['S'], principalUserId: item['Data']['S'], permissionGiverUserId: item['GiverUserId']['S'], permissions: item['Permissions']['S'], clusterOwnerUserName: item['ClusterOwnerUserName']['S'], clusterName: item['ClusterName']['S']}})})
+            this.setState({
+                permissions: jsonRes['items'].map((item: any, i: number) => {
+                    return {
+                        clusterId: item['ID']['S'],
+                        permissionId: item['SK']['S'],
+                        principalUserId: item['Data']['S'],
+                        permissionGiverUserId: item['GiverUserId']['S'],
+                        permissions: item['Permissions']['S'],
+                        clusterOwnerUserName: item['ClusterOwnerUserName']['S'],
+                        clusterName: item['ClusterName']['S']
+                    }
+                })
+            })
 
         }).catch(error => alert("ERROR: " + error))
     }

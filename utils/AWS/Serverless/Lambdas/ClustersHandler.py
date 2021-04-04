@@ -22,6 +22,15 @@ def handler(event, context):
                     'Name': json.loads(event.get('body')).get('name')
                 }
             )
+            response_body = {
+                'message': 'cluster created successfully'
+            }
+
+            response = {
+                'statusCode': 200,
+                'body': json.dumps(response_body),
+            }
+            return response
         except ClientError as e:
             print(e)
             response_body = {

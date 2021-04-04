@@ -1,37 +1,44 @@
 import * as AWS from "aws-sdk";
 import config from "../config";
+import {FetchParams, makeFetch} from "./FetchInterface";
 
-export async function deleteFile(sender: any, S3uniqueName:string, fileId?: number){
-    if(fileId === undefined){
-        alert("File ID cannot be undefined.")
+
+export const getAllUserClusters = async (props: any, setState: any) => {
+    const { authToken } = props;
+    if (authToken === '') {
         return
     }
 
-    console.log("Trying to delete file: " + S3uniqueName)
+    let fetchParams: FetchParams = {
+        url: '/clusters',
+        token: authToken,
+        method: 'GET',
+        actionDescription: "get all user's clusters"
+    }
 
-    AWS.config.update({
-        region: config.AWS.S3.bucketRegion,
-        credentials: new AWS.Credentials(config.AWS.S3.accessKeyId, config.AWS.S3.secretAccessKey)
-    });
+    let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+    console.log(promiseJson)
+    setState({clusters: promiseJson['items'].map((item:any, i:number) => {return {clusterId: item['ID']['S'], name: item['Name']['S']}})})
+}
+export const  downloadFile = (fileKey:string, cloud:string, fileName:string) => {
+    console.log("Trying to download file: " + fileName)
+    if (cloud === 'AWS'){
 
+        AWS.config.region = config.AWS.region;
+        AWS.config.credentials = new AWS.Credentials(config.AWS.S3.accessKeyId, config.AWS.S3.secretAccessKey);
 
-    const s3 = new AWS.S3({
-        apiVersion: '2006-03-01',
-        params: {Bucket: config.AWS.S3.bucketName}
-    });
+        let s3 = new AWS.S3({
+            apiVersion: '2006-03-01',
+            params: {Bucket: config.AWS.S3.bucketName}
+        });
 
-    const params = {  Bucket: config.AWS.S3.bucketName, Key: S3uniqueName };
-
-    var localThis = sender
-    s3.deleteObject(params, function(err, data) {
-        if (err) {
-            alert("Cannot delete this file from S3 bucket!")
-            console.log(err, err.stack);
-        }
-        else {
-            console.log();
-            alert("File has been deleted from the cloud.")
-            localThis.deleteFilePermanently(fileId)
-        }
-    })
+        let promise = s3.getSignedUrlPromise('getObject', {
+            Bucket: config.AWS.S3.bucketName,
+            Key: fileKey,
+            ResponseContentDisposition: 'attachment; filename ="' + fileName + '"'
+        });
+        promise.then((url) => {
+            window.open( url, '_blank' );// + '?response-content-disposition=attachment;filename='+fileName
+        }, (err) => { alert("Error with downloading your file: " + err) });
+    }
 }
