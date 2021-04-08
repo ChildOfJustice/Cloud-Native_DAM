@@ -73,7 +73,7 @@ module.exports = {
         ],
     },
     resolve: {
-        extensions: ['*', '.tsx', '.ts', '.mjs', '.js', '.vue', '.json', '.gql', '.graphql']
+        extensions: ['*', '.tsx', '.ts', '.mjs', '.js', '.vue', '.json', '.gql', '.graphql'],
     },
     devServer: {
         contentBase: path.join(__dirname, 'build'),
