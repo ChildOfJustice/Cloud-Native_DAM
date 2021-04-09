@@ -1,5 +1,5 @@
 #!/bin/bash
-AmplifyAppID="dkfrophffdbg4"
+AmplifyAppID="dfa1z5sp5zec"
 S3BucketName="sardor-test-code"
 S3StorageBucketName="sardor-app-storage"
 AwsRegion="eu-central-1"

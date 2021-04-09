@@ -41,23 +41,7 @@ class Home extends React.Component<IProps, IState> {
                             <Button onClick={this.loginButtonClickHandler} variant="primary">Login</Button>
                         </p>
                     </Alert>
-                    {/*<h1>Welcome!</h1>*/}
-                    {/*<p>*/}
-                    {/*    This is Cloud-Native DAM System.*/}
-                    {/*</p>*/}
-                    {/*<p>*/}
-                    {/*    Feel free to test our service.*/}
-                    {/*</p>*/}
-                    {/*<p>*/}
-                    {/*    <Button onClick={this.loginButtonClickHandler} variant="primary">Login</Button>*/}
-
-                    {/*    /!*<LinkContainer to="/test">*!/*/}
-                    {/*    /!*    <Button variant="primary">Test</Button>*!/*/}
-                    {/*    /!*</LinkContainer>*!/*/}
-                    {/*</p>*/}
-
                 </Jumbotron>
-                <LoadingScreen loadingMessage={"Loading"}/>
             </div>
         );
     }

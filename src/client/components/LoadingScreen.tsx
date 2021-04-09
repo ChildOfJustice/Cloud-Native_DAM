@@ -12,7 +12,7 @@ interface IProps {
 export default class LoadingScreen extends React.Component<IProps, IState> {
 
     render() {
-        const loadingStyle: CSSProperties = {
+        const loadingSpinnerStyle: CSSProperties = {
             // color: 'blue',
             // backgroundImage: 'url(' + imgUrl + ')',
             background: "url(favicon.ico) no-repeat center center",
@@ -27,16 +27,24 @@ export default class LoadingScreen extends React.Component<IProps, IState> {
             height: "120px",
             animation: "spin 2s linear infinite"
         }
+        const loadingTextStyle: CSSProperties = {
+            // color: 'blue',
+            // backgroundImage: 'url(' + imgUrl + ')',
+            position: "absolute",
+            top: "50%",
+            left: "50% ",
+        }
         // const loader = document.querySelector('.loader');
         return (
             <div>
-                <h1>{this.props.loadingMessage}...</h1>
-                <div style={loadingStyle}>
+                <div style={loadingTextStyle}>
+                    <h1>{this.props.loadingMessage}...</h1>
+                </div>
+
+                <div style={loadingSpinnerStyle}>
                     <div className="loader"/>
                 </div>
             </div>
-
-
         )
     }
 }

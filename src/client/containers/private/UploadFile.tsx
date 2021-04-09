@@ -12,6 +12,7 @@ import {connect} from "react-redux";
 import Button from "react-bootstrap/Button";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 import {FileMetadata} from "../../../interfaces/databaseTables";
+import LoadingScreen from "../../components/LoadingScreen";
 
 ///CONFIG
 //AZURE:
@@ -42,6 +43,8 @@ type ReduxType = IProps & ReturnType<typeof mapStateToProps> & ReturnType<typeof
 interface IState {
     userId: string
     canUpload: boolean
+    loading: boolean
+    loadingMessage: string
 }
 
 
@@ -51,11 +54,19 @@ class UploadFile extends React.Component<ReduxType, IState> {
     tagIndex = 1
     public state: IState = {
         userId: '',
-        canUpload: false
+        canUpload: false,
+        loading: false,
+        loadingMessage: ''
     }
 
     async componentDidMount() {
-        await this.props.loadStore()
+        this.setState({loading: true, loadingMessage: "Loading upload page"})
+        try {
+            await this.props.loadStore()
+        } catch (e) {
+            this.setState({loading: false, loadingMessage: ""})
+        }
+        this.setState({loading: false, loadingMessage: ""})
     }
 
     async checkStorageSizeLimitation(fileSize: number) {
@@ -83,7 +94,9 @@ class UploadFile extends React.Component<ReduxType, IState> {
             this.setState({canUpload: false})
     }
 
-    uploadFile = () => {
+    uploadFile = async () => {
+
+
         let cloudCombobox = document.getElementById("cloudCombobox");
         // @ts-ignore
         let itemValue = cloudCombobox.options[cloudCombobox.selectedIndex].value;
@@ -135,6 +148,8 @@ class UploadFile extends React.Component<ReduxType, IState> {
 
 
         if (itemValue === "AWS") {
+            this.setState({loading: true, loadingMessage: "Uploading the file to AWS cloud"})
+
             // @ts-ignore
             var files = document.getElementById('fileToUpload').files;
             var file = files[0];
@@ -163,6 +178,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
                 if (!this.state.canUpload) {
                     //TODO beautiful error message with offer to buy some free space
                     alert("You have acceded your storage limit. Please, buy some more!")
+                    this.setState({loading: false, loadingMessage: ""})
                     return
                 }
 
@@ -206,13 +222,15 @@ class UploadFile extends React.Component<ReduxType, IState> {
                 var promise = upload.promise();
                 promise.then(
                     function (data) {
-                        alert("File uploaded successfully.");
+                        //alert("File uploaded successfully.");
                         //window.close();
 
                         localThis.createFileClusterSubRecord(metadata)
+                        localThis.setState({loading: false, loadingMessage: ""})
                     },
                     function (err) {
                         console.log(err.message);
+                        localThis.setState({loading: false, loadingMessage: ""})
                         return alert("There was an error: " + err.message);
                     }
                 );
@@ -317,6 +335,15 @@ class UploadFile extends React.Component<ReduxType, IState> {
     }
 
     render() {
+        if(this.state.loading) {
+            return (
+                <LoadingScreen loadingMessage={this.state.loadingMessage}/>
+            )
+        }
+
+
+
+
         return (
             <Jumbotron>
                 <title>Upload file to cloud</title>

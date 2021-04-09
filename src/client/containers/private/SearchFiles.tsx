@@ -15,6 +15,7 @@ import config from "../../../config";
 import {History} from "history";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 import {downloadFile, getAllUserClusters} from "../../../interfaces/componentsFunctions";
+import LoadingScreen from "../../components/LoadingScreen";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;
@@ -33,6 +34,8 @@ interface IState {
     chosenClusterId: string | undefined
     clusters: Cluster[]
     permissions: Permission[]
+    loading: boolean
+    loadingMessage: string
     //searchCriterion
 }
 
@@ -48,22 +51,29 @@ class SearchFiles extends React.Component<ReduxType, IState> {
         chosenClusterId: '',
         filesOverviews: [],
         clusters: [],
-        permissions: []
+        permissions: [],
+        loading: false,
+        loadingMessage: ''
     }
 
 
     async componentDidMount() {
+        this.setState({loading: true, loadingMessage: "Loading your files"})
+        try {
+            await this.props.loadStore()
 
-        await this.props.loadStore()
-
-        this.getUserFiles()
-        const setState = this.setState.bind(this)
-        await getAllUserClusters(this.props, setState)
-        await this.getAllSharedClusters()
+            await this.getUserFiles()
+            const setState = this.setState.bind(this)
+            await getAllUserClusters(this.props, setState)
+            await this.getAllSharedClusters()
+        } catch (e) {
+            this.setState({loading: false, loadingMessage: ""})
+        }
+        this.setState({loading: false, loadingMessage: ""})
     }
 
     //Initialization functions
-    getUserFiles = () => {
+    getUserFiles = async () => {
         const {authToken} = this.props;
 
         const fetchParams: FetchParams = {
@@ -74,28 +84,27 @@ class SearchFiles extends React.Component<ReduxType, IState> {
             actionDescription: "load all user files"
         }
 
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            this.setState({
-                filesOverviews: jsonRes['items'].map((item: any, i: number) => {
-                    return {
-                        id: i,
-                        isChecked: false,
-                        file: {
-                            id: item['SK']['S'],
-                            name: item['Name']['S'],
-                            S3uniqueName: item['S3uniqueName']['S'],
-                            cloud: item['Cloud']['S'],
-                            uploadedBy: item['UploadedBy']['S'],
-                            ownedBy: item['OwnedBy']['S'],
-                            sizeOfFile_MB: item['SizeOfFile_MB']['N'],
-                            tagsKeys: item['TagsKeys']['SS'],
-                            tagsValues: item['TagsValues']['SS'],
-                        }
+        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log(promiseJson)
+        this.setState({
+            filesOverviews: promiseJson['items'].map((item: any, i: number) => {
+                return {
+                    id: i,
+                    isChecked: false,
+                    file: {
+                        id: item['SK']['S'],
+                        name: item['Name']['S'],
+                        S3uniqueName: item['S3uniqueName']['S'],
+                        cloud: item['Cloud']['S'],
+                        uploadedBy: item['UploadedBy']['S'],
+                        ownedBy: item['OwnedBy']['S'],
+                        sizeOfFile_MB: item['SizeOfFile_MB']['N'],
+                        tagsKeys: item['TagsKeys']['SS'],
+                        tagsValues: item['TagsValues']['SS'],
                     }
-                })
+                }
             })
-        }).catch(error => alert("ERROR: " + error))
+        })
 
     }
     getAllSharedClusters = async () => {
@@ -150,6 +159,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
         // eslint-disable-next-line no-restricted-globals
         let deleteFile = confirm("Delete the file from the cloud?");
         if (deleteFile) {
+            this.setState({loading: true, loadingMessage: "Deleting the file from AWS cloud"})
             console.log("Trying to delete file: " + S3uniqueName)
 
             AWS.config.update({
@@ -166,19 +176,25 @@ class SearchFiles extends React.Component<ReduxType, IState> {
             const params = {Bucket: config.AWS.S3.bucketName, Key: S3uniqueName};
 
             var localThis = sender
-            s3.deleteObject(params, function (err, data) {
+            s3.deleteObject(params, async function (err, data) {
                 if (err) {
                     alert("Cannot delete this file from S3 bucket!")
-                    console.log(err, err.stack);
+                    console.log(err, err.stack);  // error
+                    localThis.setState({loading: false, loadingMessage: ""})
+                    // error = 1
+                    // localState.S3DeleteTransactionError = true
                 } else {
+                    // error = 0
                     console.log();
-                    alert("File has been deleted from the cloud.")
-                    localThis.deleteFilePermanently(fileId)
+                    //alert("File has been deleted from the cloud.")
+                    // localState.S3DeleteTransactionError = false
+                    await localThis.deleteFilePermanently(fileId)
+                    localThis.setState({loading: false, loadingMessage: ""})
                 }
             })
         }
     }
-    deleteFilePermanently = (fileId?: number) => {
+    deleteFilePermanently = async (fileId?: number) => {
         const {authToken} = this.props;
 
         let fileData = {
@@ -193,11 +209,10 @@ class SearchFiles extends React.Component<ReduxType, IState> {
             actionDescription: "delete file and its metadata"
         }
 
-        makeFetch<string>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            console.log("Successfully deleted the file")
-            this.getUserFiles()
-        }).catch(error => alert("ERROR: " + error))
+        let promiseJson: any = await makeFetch<string>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log(promiseJson)
+        console.log("Successfully deleted the file")
+        await this.getUserFiles()
     }
 
     handleAddChosenFilesToCluster = async () => {
@@ -343,6 +358,13 @@ class SearchFiles extends React.Component<ReduxType, IState> {
     );
 
     render() {
+        if(this.state.loading) {
+            return (
+                <LoadingScreen loadingMessage={this.state.loadingMessage}/>
+            )
+        }
+
+
 
         let counter = 1
         return (

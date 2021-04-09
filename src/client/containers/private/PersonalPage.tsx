@@ -56,6 +56,7 @@ interface IState {
     dbResponse: string
     usedStorageSize: number | string
     loading: boolean
+    loadingMessage: string
 }
 
 class PersonalPage extends React.Component<ReduxType, IState> {
@@ -67,17 +68,22 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         queryToDB: '',
         dbResponse: '',
         usedStorageSize: 0,
-        loading: false
+        loading: false,
+        loadingMessage: ''
     }
 
     async componentDidMount() {
-        this.setState({loading: true})
-        await this.getAuthToken()
-        await this.getUserRole()
-        const setState = this.setState.bind(this)
-        await getAllUserClusters(this.props, setState)
-        await this.getUsedStorageSize()
-        this.setState({loading: false})
+        this.setState({loading: true, loadingMessage: "Loading your private page"})
+        try {
+            await this.getAuthToken()
+            await this.getUserRole()
+            const setState = this.setState.bind(this)
+            await getAllUserClusters(this.props, setState)
+            await this.getUsedStorageSize()
+        } catch (e) {
+            this.setState({loading: false, loadingMessage: ""})
+        }
+        this.setState({loading: false, loadingMessage: ""})
     }
 
     //Initialization functions
@@ -173,8 +179,8 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             getAllUserClusters(this.props, setState)
         }).catch(error => alert("ERROR: " + error))
     }
-    deleteCluster = (clusterId: string | undefined) => {
-
+    deleteCluster = async (clusterId: string | undefined) => {
+        this.setState({loading: true, loadingMessage: "Deleting the cluster"})
         const {authToken} = this.props;
 
         //delete cluster
@@ -184,8 +190,6 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         let fetchParams = {
             url: '/clusters/delete',
-            //authToken: authToken,
-            //idToken: idToken,
             token: authToken,
             method: 'DELETE',
             body: clusterData,
@@ -193,14 +197,14 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             actionDescription: "delete cluster"
         }
 
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            const setState = this.setState.bind(this)
-            getAllUserClusters(this.props, setState)
-        }).catch(error => alert("ERROR: " + error))
+        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
 
+        console.log(promiseJson)
+        const setState = this.setState.bind(this)
+        await getAllUserClusters(this.props, setState)
 
-        this.props.history.push("/private/area")
+        // this.props.history.push("/private/area")
+        this.setState({loading: false, loadingMessage: ""})
     }
     deleteFile = (S3uniqueName: string, fileId?: number) => {
         if (fileId === undefined) {
@@ -255,8 +259,8 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             console.log(jsonRes)
         }).catch(error => alert("ERROR: " + error))
     }
-    deleteUser = () => {
-
+    deleteUser = async () => {
+        this.setState({loading: true, loadingMessage: "Deleting your account"})
         const {authToken} = this.props;
 
         const fetchParams: FetchParams = {
@@ -267,56 +271,55 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             actionDescription: "load all user files to delete them"
         }
 
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            let files = jsonRes['items'].map((item: any, i: number) => {
-                return {
-                    id: item['SK']['S'],
-                    name: item['Name']['S'],
-                    S3uniqueName: item['S3uniqueName']['S'],
-                    cloud: item['Cloud']['S'],
-                    uploadedBy: item['UploadedBy']['S'],
-                    ownedBy: item['OwnedBy']['S'],
-                    sizeOfFile_MB: item['SizeOfFile_MB']['N'],
-                    tagsKeys: item['TagsKeys']['SS'],
-                    tagsValues: item['TagsValues']['SS']
-                }
-            })
-            for (const file of files) {
-                this.deleteFile(file.S3uniqueName, file.id)
+        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log(promiseJson)
+        let files = promiseJson['items'].map((item: any, i: number) => {
+            return {
+                id: item['SK']['S'],
+                name: item['Name']['S'],
+                S3uniqueName: item['S3uniqueName']['S'],
+                cloud: item['Cloud']['S'],
+                uploadedBy: item['UploadedBy']['S'],
+                ownedBy: item['OwnedBy']['S'],
+                sizeOfFile_MB: item['SizeOfFile_MB']['N'],
+                tagsKeys: item['TagsKeys']['SS'],
+                tagsValues: item['TagsValues']['SS']
             }
-        }).catch(error => alert("ERROR: " + error))
+        })
+        for (const file of files) {
+            this.deleteFile(file.S3uniqueName, file.id)
+        }
 
 
         for (const cluster of this.state.clusters) {
-            this.deleteCluster(cluster.clusterId)
+            await this.deleteCluster(cluster.clusterId)
         }
 
         const cognito = new CognitoService();
-        cognito.deleteUser(this.props.authToken)
-            .then(promiseOutput => {
-                if (promiseOutput.success) {
-                    console.log("Cognito user successfully deleted: " + promiseOutput.msg)
-                    //delete user
-                    const {authToken} = this.props;
+        let promiseOutput: any = await cognito.deleteUser(this.props.authToken)
+        if (promiseOutput.success) {
+            console.log("Cognito user successfully deleted: " + promiseOutput.msg)
+            //delete user
+            const {authToken} = this.props;
 
-                    let fetchParams: FetchParams = {
-                        url: '/users',
-                        token: authToken,
-                        method: 'DELETE',
+            let fetchParams: FetchParams = {
+                url: '/users',
+                token: authToken,
+                method: 'DELETE',
 
-                        actionDescription: "delete the user"
-                    }
+                actionDescription: "delete the user"
+            }
 
-                    makeFetch<any>(fetchParams).then(jsonRes => {
-                        console.log(jsonRes)
-                        this.props.history.push("/")
-                    }).catch(error => alert("ERROR: " + error))
-                } else {
-                    console.log("ERROR WITH DELETING COGNITO USER: " + promiseOutput.msg)
-                    return
-                }
-            });
+            let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+            console.log(promiseJson)
+            this.props.history.push("/")
+            this.setState({loading: false, loadingMessage: ""})
+        } else {
+            console.log("ERROR WITH DELETING COGNITO USER: " + promiseOutput.msg)
+            return
+        }
+
+
     }
 
     makeAdminQuery = () => {
@@ -375,7 +378,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
     render() {
         if(this.state.loading) {
             return (
-                <LoadingScreen loadingMessage={"Loading"}/>
+                <LoadingScreen loadingMessage={this.state.loadingMessage}/>
             )
         }
 
@@ -429,7 +432,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                         </Row>
                         <Row>
                             <LinkContainer to="/private/sharedWithMeClusters">
-                                <Button variant="primary">Shared with me</Button>
+                                <Button variant="link">See shared with me clusters</Button>
                             </LinkContainer>
                         </Row>
                     </Container>

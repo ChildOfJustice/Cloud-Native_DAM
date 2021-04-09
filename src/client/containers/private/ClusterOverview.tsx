@@ -8,7 +8,7 @@ import {IRootState} from '../../../store';
 import {Dispatch} from 'redux';
 import * as storeService from '../../../store/demo/store.service'
 import {DemoActions} from '../../../store/demo/types';
-import {Table} from "react-bootstrap";
+import {Col, Row, Table} from "react-bootstrap";
 import {LinkContainer} from "react-router-bootstrap";
 import Navbar from "react-bootstrap/Navbar";
 import {FileMetadata, Permission} from "../../../interfaces/databaseTables";
@@ -17,6 +17,8 @@ import config from "../../../config";
 import {History} from "history";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 import {downloadFile} from "../../../interfaces/componentsFunctions";
+import LoadingScreen from "../../components/LoadingScreen";
+import Container from "react-bootstrap/Container";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;
@@ -42,6 +44,8 @@ interface IState {
     canGivePermissionsToOthersCheckboxChecked: boolean
     permissions: string
     S3DeleteTransactionError: boolean
+    loading: boolean
+    loadingMessage: string
 }
 
 interface IProps {
@@ -64,19 +68,28 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         deletePermissionCheckboxChecked: false,
         canGivePermissionsToOthersCheckboxChecked: false,
         permissions: "0000",
-        S3DeleteTransactionError: false
+        S3DeleteTransactionError: false,
+        loading: false,
+        loadingMessage: ''
     }
 
 
     async componentDidMount() {
+        this.setState({loading: true, loadingMessage: "Loading the cluster data"})
+        try{
+            await this.props.loadStore()
+            // @ts-ignore
+            let clusterId = this.props.match.params.clusterId
+            //alert('GOT ID: ' + clusterId)
+            await this.setState({currentClusterId: clusterId})
+            await this.getCurrentUserPermissions()
+            await this.loadFilesMetadata()
+            await this.getAllCoUsers()
+        } catch (e) {
+            this.setState({loading: false, loadingMessage: ""})
+        }
+        this.setState({loading: false, loadingMessage: ""})
 
-        await this.props.loadStore()
-
-
-        // @ts-ignore
-        let clusterId = this.props.match.params.clusterId
-        //alert('GOT ID: ' + clusterId)
-        await this.setState({currentClusterId: clusterId})
         //alert('set ID: ' + this.state.currentClusterId)
         // if (clusterId !== ''){
         //     await localStorage.setItem('currentClusterId', clusterId)
@@ -87,12 +100,10 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         //     await this.setState({currentClusterId: clusterId})
         //     alert('loaded ID: ' + this.state.currentClusterId)
         // }
-
-        this.getCurrentUserPermissions()
     }
 
     //Initialization functions
-    getCurrentUserPermissions = () => {
+    getCurrentUserPermissions = async () => {
 
 
         const {authToken} = this.props
@@ -108,38 +119,30 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             actionDescription: "get the cluster"
         }
 
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
+        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log(promiseJson)
 
-            this.setState({clusterName: jsonRes['cluster']['Name']['S']})
+        this.setState({clusterName: promiseJson['cluster']['Name']['S']})
 
-            if (jsonRes['youAreTheOwner'] === true) {
-                this.setState({permissions: "1111"})
-                this.loadFilesMetadata()
-                this.getAllCoUsers()
-            } else {
-                //the user is NOT the owner of this cluster, getting the permissions:
-                const fetchParams: FetchParams = {
-                    // @ts-ignore
-                    url: '/permissions?action=getUserPermissions&clusterId=' + this.state.currentClusterId,
-                    token: authToken,
-                    method: 'GET',
+        if (promiseJson['youAreTheOwner'] === true) {
+            this.setState({permissions: "1111"})
+        } else {
+            //the user is NOT the owner of this cluster, getting the permissions:
+            const fetchParams: FetchParams = {
+                // @ts-ignore
+                url: '/permissions?action=getUserPermissions&clusterId=' + this.state.currentClusterId,
+                token: authToken,
+                method: 'GET',
 
-                    actionDescription: "get permissions"
-                }
-
-                makeFetch<any>(fetchParams).then(jsonRes => {
-                    console.log(jsonRes)
-                    this.setState({permissions: jsonRes['permissions']})
-                    this.loadFilesMetadata()
-                    this.getAllCoUsers()
-                }).catch(error => alert("ERROR: " + error))
+                actionDescription: "get permissions"
             }
 
-
-        }).catch(error => alert("ERROR: " + error))
+            let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+            console.log(promiseJson)
+            this.setState({permissions: promiseJson['permissions']})
+        }
     }
-    loadFilesMetadata = () => {
+    loadFilesMetadata = async () => {
         if (this.state.permissions[0] !== '1' && this.state.permissions[2] !== '1') {
             return
         }
@@ -156,27 +159,25 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             actionDescription: "load files metadata"
         }
 
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            this.setState({
-                files: jsonRes['items'].map((item: any, i: number) => {
-                    return {
-                        id: item['SK']['S'],
-                        name: item['Name']['S'],
-                        S3uniqueName: item['S3uniqueName']['S'],
-                        cloud: item['Cloud']['S'],
-                        uploadedBy: item['UploadedBy']['S'],
-                        ownedBy: item['OwnedBy']['S'],
-                        sizeOfFile_MB: item['SizeOfFile_MB']['N'],
-                        tagsKeys: item['TagsKeys']['SS'],
-                        tagsValues: item['TagsValues']['SS'],
-                    }
-                })
+        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log(promiseJson)
+        this.setState({
+            files: promiseJson['items'].map((item: any, i: number) => {
+                return {
+                    id: item['SK']['S'],
+                    name: item['Name']['S'],
+                    S3uniqueName: item['S3uniqueName']['S'],
+                    cloud: item['Cloud']['S'],
+                    uploadedBy: item['UploadedBy']['S'],
+                    ownedBy: item['OwnedBy']['S'],
+                    sizeOfFile_MB: item['SizeOfFile_MB']['N'],
+                    tagsKeys: item['TagsKeys']['SS'],
+                    tagsValues: item['TagsValues']['SS'],
+                }
             })
-        }).catch(error => alert("ERROR: " + error))
-
+        })
     }
-    getAllCoUsers = () => {
+    getAllCoUsers = async () => {
         let clusterId = this.state.currentClusterId
 
         if (this.state.permissions[3] !== '1') {
@@ -192,20 +193,19 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             actionDescription: "get all co-users"
         }
 
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            this.setState({
-                coUsers: jsonRes['items'].map((item: any, i: number) => {
-                    return {
-                        clusterId: item['ID']['S'],
-                        permissionId: item['SK']['S'],
-                        permissionGiverUserName: item['GiverUserName']['S'],
-                        permissions: item['Permissions']['S'],
-                        principalUserName: item['Data']['S']
-                    }
-                })
+        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log(promiseJson)
+        this.setState({
+            coUsers: promiseJson['items'].map((item: any, i: number) => {
+                return {
+                    clusterId: item['ID']['S'],
+                    permissionId: item['SK']['S'],
+                    permissionGiverUserName: item['GiverUserName']['S'],
+                    permissions: item['Permissions']['S'],
+                    principalUserName: item['Data']['S']
+                }
             })
-        }).catch(error => alert("ERROR: " + error))
+        })
     }
     //^
 
@@ -252,6 +252,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             return
         }
 
+
         console.log("Trying to delete file: " + S3uniqueName)
 
         let deletePermanently = prompt('Type "delete" to permanently delete the file or leave it blank to just unlink this file from the current cluster.', '');
@@ -259,7 +260,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         if (deletePermanently === 'delete') {
 
             // this.deleteFilePermanently(fileId)
-
+            this.setState({loading: true, loadingMessage: "Deleting the file from AWS cloud"})
 
             //TODO need to be a Transaction!!!
             AWS.config.update({
@@ -279,18 +280,20 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             // let localState = this.state
             // localState.S3DeleteTransactionError = false
             var localThis = this
-            s3.deleteObject(params, function (err, data) {
+            s3.deleteObject(params, async function (err, data) {
                 if (err) {
                     alert("Cannot delete this file from S3 bucket!")
                     console.log(err, err.stack);  // error
+                    localThis.setState({loading: false, loadingMessage: ""})
                     // error = 1
                     // localState.S3DeleteTransactionError = true
                 } else {
                     // error = 0
                     console.log();
-                    alert("File has been deleted from the cloud.")
+                    //alert("File has been deleted from the cloud.")
                     // localState.S3DeleteTransactionError = false
-                    localThis.deleteFilePermanently(fileId)
+                    await localThis.deleteFilePermanently(fileId)
+                    localThis.setState({loading: false, loadingMessage: ""})
                 }
             })
             // while(error === -1){
@@ -331,7 +334,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
 
     }
-    deleteFilePermanently = (fileId?: number) => {
+    deleteFilePermanently = async (fileId?: number) => {
         const {authToken} = this.props;
 
         let fileData = {
@@ -346,11 +349,10 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             actionDescription: "delete file and its metadata"
         }
 
-        makeFetch<string>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            console.log("Successfully deleted the file")
-            this.loadFilesMetadata()
-        }).catch(error => alert("ERROR: " + error))
+        let promiseJson: any = await makeFetch<string>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log(promiseJson)
+        console.log("Successfully deleted the file")
+        await this.loadFilesMetadata()
     }
     deleteCoUser = (couserPermission: Permission) => {
 
@@ -454,33 +456,47 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                 </div>
                 :
                 <div>
-                    your permissions are:<br/>
-
-                    {(this.state.permissions[0] === '1') ?
-                        <div>
-                            You can Download files<br/>
-                        </div>
-                        : ''}
-                    {(this.state.permissions[1] === '1') ?
-                        <div>
-                            You can Upload files<br/>
-                        </div>
-                        : ''}
-                    {(this.state.permissions[2] === '1') ?
-                        <div>
-                            You can Delete files<br/>
-                        </div>
-                        : ''}
-                    {(this.state.permissions[3] === '1') ?
-                        <div>
-                            You can give permissions to other users<br/>
-                        </div>
-                        : ''}
-
-                    <this.UploadPanel canUpload={this.state.permissions[1] === "1"}/>
-                    <br/>
-
-                    <this.SharePanel canShare={this.state.permissions[3] === '1'}/>
+                    <Container>
+                        <Row>
+                            <Col>Your permissions are:<br/></Col>
+                        </Row>
+                        <Row>
+                            <Col>
+                                {(this.state.permissions[0] === '1') ?
+                                    <div>
+                                        You can <strong>Download</strong> files<br/>
+                                    </div>
+                                    : ''}
+                            </Col>
+                            <Col>
+                                {(this.state.permissions[1] === '1') ?
+                                    <div>
+                                        You can <strong>Upload</strong> files<br/>
+                                    </div>
+                                    : ''}
+                            </Col>
+                            <Col>
+                                {(this.state.permissions[2] === '1') ?
+                                    <div>
+                                        You can <strong>Delete</strong> files<br/>
+                                    </div>
+                                    : ''}
+                            </Col>
+                            <Col>
+                                {(this.state.permissions[3] === '1') ?
+                                    <div>
+                                        You can <strong>give permissions</strong> to other users<br/>
+                                    </div>
+                                    : ''}
+                            </Col>
+                        </Row>
+                        <Row>
+                            <this.UploadPanel canUpload={this.state.permissions[1] === "1"}/>
+                        </Row>
+                        <Row>
+                            <this.SharePanel canShare={this.state.permissions[3] === '1'}/>
+                        </Row>
+                    </Container>
 
                     <Table striped bordered hover variant="dark">
                         <thead>
@@ -581,6 +597,11 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
     );
 
     render() {
+        if(this.state.loading) {
+            return (
+                <LoadingScreen loadingMessage={this.state.loadingMessage}/>
+            )
+        }
 
         let clusterCounter = 1
         let permissionCounter = 1

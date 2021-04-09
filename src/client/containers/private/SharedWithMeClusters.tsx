@@ -9,6 +9,7 @@ import {Table} from "react-bootstrap";
 import {LinkContainer} from "react-router-bootstrap";
 import {Permission} from "../../../interfaces/databaseTables";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
+import LoadingScreen from "../../components/LoadingScreen";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;
@@ -28,19 +29,29 @@ type ReduxType = ReturnType<typeof mapStateToProps> & ReturnType<typeof mapDispa
 
 interface IState {
     permissions: Permission[]
+    loading: boolean
+    loadingMessage: string
 }
 
 
 class PersonalPage extends React.Component<ReduxType, IState> {
     public state: IState = {
-        permissions: []
+        permissions: [],
+        loading: false,
+        loadingMessage: ''
     }
 
     async componentDidMount() {
-        await this.props.loadStore()
+        this.setState({loading: true, loadingMessage: "Loading shared with you clusters"})
+        try {
+            await this.props.loadStore()
 
-        //await decodeIdToken(this.props.idToken).then(userid => this.setState({userId: userid}))
-        await this.getAllSharedClusters()
+            //await decodeIdToken(this.props.idToken).then(userid => this.setState({userId: userid}))
+            await this.getAllSharedClusters()
+        } catch (e) {
+            this.setState({loading: false, loadingMessage: ""})
+        }
+        this.setState({loading: false, loadingMessage: ""})
     }
 
     getAllSharedClusters = () => {
@@ -80,6 +91,15 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
     //eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     render() {
+        if(this.state.loading) {
+            return (
+                <LoadingScreen loadingMessage={this.state.loadingMessage}/>
+            )
+        }
+
+
+
+
         var counter = 0
 
         const PersonalPage = (
