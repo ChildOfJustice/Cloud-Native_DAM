@@ -8,19 +8,24 @@ Description: "Example HTTP API with a JWT authorizer. This template includes a C
   \ use the token as a query string parameter.\n"
 Transform: AWS::Serverless-2016-10-31
 Parameters:
-  CognitoCallBackUrl:
-    Type: String
-    Default: http://localhost
-  CognitoOriginUrl:
-    Type: String
-    Default: http://localhost
-  CognitoLogOutUrl:
-    Type: String
-    Default: http://localhost
   CognitoDomain:
     Type: String
     Default: amplifytestappdomain
+  GitHubAccessToken:
+    Type: String
+    Default: ''
 Resources:
+  AmplifyApp:
+    Type: AWS::Amplify::App
+    Properties:
+      AccessToken:
+        Ref: CognitoDomain
+      CustomRules:
+      - Source: </^((?!\.(css|gif|ico|jpg|js|png|txt|svg|woff|ttf)$).)*$/>
+        Status: '200'
+        Target: /index.html
+      Name: cloudnativedam
+      Repository: https://github.com/ChildOfJustice/Cloud-Native_DAM.git
   ProgrammaticUserForS3:
     Type: AWS::IAM::User
     Properties:
@@ -63,7 +68,9 @@ Resources:
         AllowMethods:
         - '*'
         AllowOrigins:
-        - Ref: CognitoOriginUrl
+        - Fn::GetAtt:
+          - AmplifyApp
+          - DefaultDomain
   TestIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -424,7 +431,9 @@ Resources:
       CorsConfiguration:
         CorsRules:
         - AllowedOrigins:
-          - Ref: CognitoOriginUrl
+          - Fn::GetAtt:
+            - AmplifyApp
+            - DefaultDomain
           AllowedMethods:
           - POST
           - GET
@@ -484,7 +493,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: MyLambdaFunction.handler
-      CodeUri: s3://sardor-test-code/4dfd4843963c7a2c882828f9f01150f9
+      CodeUri: s3://sardor-test-code/7fc3d32c8bb026366c2a7edc53a205fe
   UsersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -494,7 +503,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersHandler.handler
-      CodeUri: s3://sardor-test-code/4a32a060436b3c7a4fae34bd4818f28e
+      CodeUri: s3://sardor-test-code/3eddb6d6d67fb60302a95f91f49fb9bf
   UsersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -504,7 +513,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/cddad16b25566138364db8a6576f6ff1
+      CodeUri: s3://sardor-test-code/cdbae2d264b071cdd7c82d46de12c66e
   ClustersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -514,7 +523,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersHandler.handler
-      CodeUri: s3://sardor-test-code/b292332e5864a11d88af68037f676f32
+      CodeUri: s3://sardor-test-code/d0f15b00ac342a89e83b92c42b046282
   ClustersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -524,7 +533,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/ed4b149750d9b53f5ecbd1689ba6db4b
+      CodeUri: s3://sardor-test-code/f2bcd93baddf14960bab8f458788eedd
   FilesLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -534,7 +543,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: FilesHandler.handler
-      CodeUri: s3://sardor-test-code/4a028e93fab4f991a0d47b7008d66ff9
+      CodeUri: s3://sardor-test-code/5e50b3d926ca33086b9c6215c1f92046
   PermissionsLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -544,7 +553,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: PermissionsHandler.handler
-      CodeUri: s3://sardor-test-code/8d79ca804f9a0e25fc9229a7e0a530cc
+      CodeUri: s3://sardor-test-code/8d179081ae5eb5f399c4dc879513efd5
   AdminLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -554,7 +563,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: AdminHandler.handler
-      CodeUri: s3://sardor-test-code/d13c7988adb36b3fe96432dfa9ad759e
+      CodeUri: s3://sardor-test-code/295f8d502802635b126040e91e70afba
   APIInvokeTestLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -686,9 +695,11 @@ Resources:
       AllowedOAuthFlowsUserPoolClient: true
       ClientName: api-app-client
       CallbackURLs:
-      - Ref: CognitoCallBackUrl
+      - Fn::Sub: ${AmplifyApp.DefaultDomain}/private/area
       LogoutURLs:
-      - Ref: CognitoLogOutUrl
+      - Fn::GetAtt:
+        - AmplifyApp
+        - DefaultDomain
       ExplicitAuthFlows:
       - ALLOW_ADMIN_USER_PASSWORD_AUTH
       - ALLOW_USER_PASSWORD_AUTH
@@ -708,7 +719,7 @@ Resources:
 Outputs:
   SignupURL:
     Value:
-      Fn::Sub: https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile+aws.cognito.signin.user.admin&redirect_uri=${CognitoCallBackUrl}
+      Fn::Sub: https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile+aws.cognito.signin.user.admin&redirect_uri=${AmplifyApp.DefaultDomain}/private/area
   ApiEndpoint:
     Value:
       Fn::GetAtt:

@@ -6,9 +6,9 @@ AwsRegion="eu-central-1"
 StackName="TestStack"
 
 
-echo "STEP 1 #### Generating CloudFormation deployment script...";
+#echo "STEP 1 #### Generating CloudFormation deployment script...";
 cd utils/AWS/CF/GenerateCfDeploymentScript &&
-sh generateDeployScript.sh $AmplifyAppID &&
+#sh generateDeployScript.sh $AmplifyAppID &&
 
 echo "STEP 2 #### Packaging CloudFormation template...";
 cd ../PackageCfTemplate &&
