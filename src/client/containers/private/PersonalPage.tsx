@@ -8,7 +8,7 @@ import {IRootState} from '../../../store';
 import {Dispatch} from 'redux';
 import * as storeService from '../../../store/demo/store.service'
 import {DemoActions} from '../../../store/demo/types';
-import {Table} from "react-bootstrap";
+import {Col, Row, Table} from "react-bootstrap";
 import {LinkContainer} from "react-router-bootstrap";
 import {Cluster} from "../../../interfaces/databaseTables";
 import {History} from "history";
@@ -19,6 +19,8 @@ import Test from "../Test";
 import {getAllUserClusters} from "../../../interfaces/componentsFunctions";
 import * as AWS from "aws-sdk";
 import config from "../../../config";
+import LoadingScreen from "../../components/LoadingScreen";
+import Container from "react-bootstrap/Container";
 
 
 const mapStateToProps = ({demo}: IRootState) => {
@@ -53,6 +55,7 @@ interface IState {
     queryToDB: string
     dbResponse: string
     usedStorageSize: number | string
+    loading: boolean
 }
 
 class PersonalPage extends React.Component<ReduxType, IState> {
@@ -63,12 +66,18 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         userRole: 'NO_ROLE',
         queryToDB: '',
         dbResponse: '',
-        usedStorageSize: 0
+        usedStorageSize: 0,
+        loading: false
     }
 
     async componentDidMount() {
+        this.setState({loading: true})
         await this.getAuthToken()
-        this.getUserRole()
+        await this.getUserRole()
+        const setState = this.setState.bind(this)
+        await getAllUserClusters(this.props, setState)
+        await this.getUsedStorageSize()
+        this.setState({loading: false})
     }
 
     //Initialization functions
@@ -93,7 +102,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         }
     }
 
-    getUserRole = () => {
+    getUserRole = async () => {
         const {authToken} = this.props
 
         if (authToken === '') {
@@ -115,17 +124,11 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             actionDescription: "get user to set his role"
         }
 
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            //alert(JSON.stringify(jsonRes));
-            this.setState({userRole: jsonRes['role']})
-            const setState = this.setState.bind(this)
-            getAllUserClusters(this.props, setState)
-            this.getUsedStorageSize()
-        })
-            .catch(error => alert("ERROR: " + error))
+        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log(promiseJson)
+        this.setState({userRole: promiseJson['role']})
     }
-    getUsedStorageSize = () => {
+    getUsedStorageSize = async () => {
         //// ERROR: TypeError: Cannot read property 'updater' of undefined
         const {authToken} = this.props;
 
@@ -137,13 +140,12 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             actionDescription: "get used storage size"
         }
 
-        makeFetch<any>(fetchParams).then(jsonRes => {
-            console.log(jsonRes)
-            // if (jsonRes['usedStorageSize'] == null)
-            //     this.setState({usedStorageSize: 0})
-            //else this.setState({usedStorageSize: jsonRes['usedStorageSize']})
-            this.setState({usedStorageSize: jsonRes['usedStorageSize']})
-        }).catch(error => alert("ERROR: " + error))
+        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log(promiseJson)
+        // if (jsonRes['usedStorageSize'] == null)
+        //     this.setState({usedStorageSize: 0})
+        //else this.setState({usedStorageSize: jsonRes['usedStorageSize']})
+        this.setState({usedStorageSize: promiseJson['usedStorageSize']})
     }
     //^
 
@@ -371,6 +373,15 @@ class PersonalPage extends React.Component<ReduxType, IState> {
     );
 
     render() {
+        if(this.state.loading) {
+            return (
+                <LoadingScreen loadingMessage={"Loading"}/>
+            )
+        }
+
+
+
+
         let counter = 0;
 
         // this.getUserRole()  <---- watch this, the page will have the 401 error, and immediately after that, everything will work
@@ -387,27 +398,41 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
                 <div>
                     {/*Your user id is: "{this.state.userId}".<br/>*/}
-                    Your role is: "{this.state.userRole}".<br/>
-                    Your current used storage size is {this.state.usedStorageSize} MB.
 
-                    <LinkContainer to="/private/searchFiles">
-                        <Button variant="info">My files</Button>
-                    </LinkContainer>
-
-
-                    <Test authToken={this.props.authToken}/>
-                    <Form.Group controlId="ClusterName">
-                        <Form.Label>Cluster Name</Form.Label>
-                        <Form.Control onChange={this._onChangeClusterName} type="string" placeholder="Cluster name"/>
-                    </Form.Group>
-                    <Button onClick={this.createCluster} variant="primary">Create Cluster</Button>
-
-                    <this.AdminPanel isAdmin={this.state.userRole === "ADMINISTRATOR"}/>
-
-                    <br/>
-                    <LinkContainer to="/private/sharedWithMeClusters">
-                        <Button variant="primary">Shared with me</Button>
-                    </LinkContainer>
+                    <Container>
+                        <Row>
+                            <Col>Your role is: "{this.state.userRole}".<br/></Col>
+                        </Row>
+                        <Row>
+                            Your current used storage size is {this.state.usedStorageSize} MB.
+                        </Row>
+                        <Row>
+                            <Col>
+                                <LinkContainer to="/private/searchFiles">
+                                    <Button variant="info">My files</Button>
+                                </LinkContainer>
+                            </Col>
+                            <Col>
+                                <Test authToken={this.props.authToken}/>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Form.Group controlId="ClusterName">
+                                <Form.Label>Cluster Name</Form.Label>
+                                <Form.Control onChange={this._onChangeClusterName} type="string" placeholder="Cluster name"/>
+                            </Form.Group>
+                            <br/>
+                            <Button onClick={this.createCluster} variant="primary">Create Cluster</Button>
+                        </Row>
+                        <Row>
+                            <this.AdminPanel isAdmin={this.state.userRole === "ADMINISTRATOR"}/>
+                        </Row>
+                        <Row>
+                            <LinkContainer to="/private/sharedWithMeClusters">
+                                <Button variant="primary">Shared with me</Button>
+                            </LinkContainer>
+                        </Row>
+                    </Container>
 
                     <Table striped bordered hover variant="dark">
                         <thead>

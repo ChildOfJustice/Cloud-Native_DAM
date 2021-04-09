@@ -58,6 +58,9 @@ class App extends React.Component {
                     <LinkContainer to="/private/area">
                         <Navbar.Brand>Personal page</Navbar.Brand>
                     </LinkContainer>
+                    <LinkContainer to="/private/searchFiles">
+                        <Navbar.Brand>My files</Navbar.Brand>
+                    </LinkContainer>
                 </Navbar>
                 <Container className="p-3">
                     <Switch>
