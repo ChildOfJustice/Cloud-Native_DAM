@@ -148,15 +148,16 @@ class UploadFile extends React.Component<ReduxType, IState> {
 
 
         if (itemValue === "AWS") {
-            this.setState({loading: true, loadingMessage: "Uploading the file to AWS cloud"})
+
 
             // @ts-ignore
             var files = document.getElementById('fileToUpload').files;
             var file = files[0];
             if (typeof file == "undefined" || typeof file.name == "undefined") {
                 alert("Choose the file first");
+                return
             }
-
+            this.setState({loading: true, loadingMessage: "Uploading the file to AWS cloud"})
 
             var metadata: FileMetadata = {
                 name: file.name,
@@ -222,7 +223,7 @@ class UploadFile extends React.Component<ReduxType, IState> {
                 var promise = upload.promise();
                 promise.then(
                     function (data) {
-                        //alert("File uploaded successfully.");
+                        alert("File uploaded successfully.");
                         //window.close();
 
                         localThis.createFileClusterSubRecord(metadata)

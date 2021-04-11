@@ -79,7 +79,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             await this.getUserRole()
             const setState = this.setState.bind(this)
             await getAllUserClusters(this.props, setState)
-            await this.getUsedStorageSize()
+            this.getUsedStorageSize()
         } catch (e) {
             this.setState({loading: false, loadingMessage: ""})
         }
@@ -416,7 +416,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                                 </LinkContainer>
                             </Col>
                             <Col>
-                                <Test authToken={this.props.authToken}/>
+                                {/*<Test authToken={this.props.authToken}/>*/}
                             </Col>
                         </Row>
                         <Row>
