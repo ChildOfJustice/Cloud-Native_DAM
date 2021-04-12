@@ -16,7 +16,7 @@ import CognitoService from "../../../services/cognito.service";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 import * as tokensService from "../../../store/demo/tokens.service";
 import Test from "../Test";
-import {getAllUserClusters} from "../../../interfaces/componentsFunctions";
+import {getAllUserClusters, getAllUserFiles} from "../../../interfaces/componentsFunctions";
 import * as AWS from "aws-sdk";
 import config from "../../../config";
 import LoadingScreen from "../../components/LoadingScreen";
@@ -270,22 +270,24 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
             actionDescription: "load all user files to delete them"
         }
+        let files = await getAllUserFiles(authToken, fetchParams)
 
-        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
-        console.log(promiseJson)
-        let files = promiseJson['items'].map((item: any, i: number) => {
-            return {
-                id: item['SK']['S'],
-                name: item['Name']['S'],
-                S3uniqueName: item['S3uniqueName']['S'],
-                cloud: item['Cloud']['S'],
-                uploadedBy: item['UploadedBy']['S'],
-                ownedBy: item['OwnedBy']['S'],
-                sizeOfFile_MB: item['SizeOfFile_MB']['N'],
-                tagsKeys: item['TagsKeys']['SS'],
-                tagsValues: item['TagsValues']['SS']
-            }
-        })
+        //
+        // let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        // console.log(promiseJson)
+        // let files = promiseJson['items'].map((item: any, i: number) => {
+        //     return {
+        //         id: item['SK']['S'],
+        //         name: item['Name']['S'],
+        //         S3uniqueName: item['S3uniqueName']['S'],
+        //         cloud: item['Cloud']['S'],
+        //         uploadedBy: item['UploadedBy']['S'],
+        //         ownedBy: item['OwnedBy']['S'],
+        //         sizeOfFile_MB: item['SizeOfFile_MB']['N'],
+        //         tagsKeys: item['TagsKeys']['SS'],
+        //         tagsValues: item['TagsValues']['SS']
+        //     }
+        // })
         for (const file of files) {
             this.deleteFile(file.S3uniqueName, file.id)
         }
@@ -299,6 +301,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         let promiseOutput: any = await cognito.deleteUser(this.props.authToken)
         if (promiseOutput.success) {
             console.log("Cognito user successfully deleted: " + promiseOutput.msg)
+            this.props.history.push("/")
             //delete user
             const {authToken} = this.props;
 
@@ -312,8 +315,8 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
             let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
             console.log(promiseJson)
-            this.props.history.push("/")
-            this.setState({loading: false, loadingMessage: ""})
+
+            // this.setState({loading: false, loadingMessage: ""})
         } else {
             console.log("ERROR WITH DELETING COGNITO USER: " + promiseOutput.msg)
             return
@@ -432,7 +435,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                         </Row>
                         <Row>
                             <LinkContainer to="/private/sharedWithMeClusters">
-                                <Button variant="link">See shared with me clusters</Button>
+                                <Button variant="info">See shared with me clusters</Button>
                             </LinkContainer>
                         </Row>
                     </Container>

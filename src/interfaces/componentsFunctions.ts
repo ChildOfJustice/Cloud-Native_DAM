@@ -42,3 +42,53 @@ export const  downloadFile = (fileKey:string, cloud:string, fileName:string) => 
         }, (err) => { alert("Error with downloading your file: " + err) });
     }
 }
+
+export const getAllUserFileOverviews = async (authToken: string, fetchParams: FetchParams) => {
+    let files: any = await getAllUserFiles(authToken, fetchParams)
+
+    return files.map((item: any, i: number) => {
+        return {
+            id: i,
+            isChecked: false,
+            file: item
+        }
+    })
+}
+export const getAllUserFiles = async (authToken: string, fetchParams: FetchParams) => {
+
+    let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+    return promiseJson['items'].map((item: any, i: number) => {
+        let file = {
+            id: item['SK']['S'],
+            name: item['Name']['S'],
+            S3uniqueName: item['S3uniqueName']['S'],
+            cloud: item['Cloud']['S'],
+            uploadedBy: item['UploadedBy']['S'],
+            ownedBy: item['OwnedBy']['S'],
+            sizeOfFile_MB: item['SizeOfFile_MB']['N'],
+            tagsKeys: [""],
+            tagsValues: [""],
+        }
+
+        delete item['ID']
+        delete item['SK']
+        delete item['Name']
+        delete item['Data']
+        delete item['S3uniqueName']
+        delete item['Cloud']
+        delete item['UploadedBy']
+        delete item['OwnedBy']
+        delete item['SizeOfFile_MB']
+
+        let allTagKeys: string[] = []
+        let allTagValues: string[] = []
+        for (let key in item) {
+            allTagKeys.push(key);
+            allTagValues.push(item[key]['S']);
+        }
+        file.tagsKeys = allTagKeys
+        file.tagsValues = allTagValues
+
+        return file
+    })
+}

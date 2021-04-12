@@ -32,8 +32,8 @@ export default class LoadingScreen extends React.Component<IProps, IState> {
             borderBottom: "16px solid #3498db",
             borderRadius: "50%",
             position: "absolute",
-            top: "calc(50% - 60px)",
-            left: "calc(50% - 60px)",
+            top: "calc(50% - 110px)",
+            left: "calc(50% - 110px)",
             width: "220px",
             height: "220px",
             animation: "spin 2s linear infinite"

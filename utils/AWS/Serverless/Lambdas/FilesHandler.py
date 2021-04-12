@@ -34,14 +34,7 @@ def handler(event, context):
                 }
                 return response
 
-            tag_keys_list = json.loads(event.get('body')).get('tagsKeys')
-            print(tag_keys_list)
-            if(len(tag_keys_list) == 0):
-                tag_keys_list.append("")
-            tag_values_list = json.loads(event.get('body')).get('tagsValues')
-            print(tag_values_list)
-            if(len(tag_values_list) == 0):
-                tag_values_list.append("")
+
             #print(tag_keys_list) WILL BE [""]
             #print(json.loads(event.get('body')).get('tagsKeys').append("")) WILL BE None !!!!!!!!!!! (Python and web are the worst)
             try:
@@ -75,6 +68,18 @@ def handler(event, context):
                         }
                     ]
                 )
+                tag_keys_list = json.loads(event.get('body')).get('tagsKeys')
+                if(len(tag_keys_list) == 0):
+                    tag_keys_list.append("NULL")
+                tag_values_list = json.loads(event.get('body')).get('tagsValues')
+                if(len(tag_values_list) == 0):
+                    tag_values_list.append("NULL")
+                for key in tag_keys_list:
+                    if (key == ''):
+                        key = 'NULL'
+                for value in tag_values_list:
+                    if (value == ''):
+                        value = 'NULL'
                 update_expression = 'SET {}'.format(','.join(f'#{k}=:{k}' for k in tag_keys_list))
                 expression_attribute_values = {f':{k}': v for k, v in zip(tag_keys_list, tag_values_list)}
                 expression_attribute_names = {f'#{k}': k for k in tag_keys_list}
