@@ -34,12 +34,7 @@ def handler(event, context):
                 }
                 return response
 
-            tag_keys_list = json.loads(event.get('body')).get('tagsKeys')
-            if(len(tag_keys_list) == 0):
-                tag_keys_list.append("")
-            tag_values_list = json.loads(event.get('body')).get('tagsValues')
-            if(len(tag_values_list) == 0):
-                tag_values_list.append("")
+
             #print(tag_keys_list) WILL BE [""]
             #print(json.loads(event.get('body')).get('tagsKeys').append("")) WILL BE None !!!!!!!!!!! (Python and web are the worst)
             try:
@@ -56,9 +51,7 @@ def handler(event, context):
                                     'Cloud': { 'S': json.loads(event.get('body')).get('cloud') },
                                     'OwnedBy': { 'S': json.loads(event.get('body')).get('ownedBy') },
                                     'UploadedBy': { 'S': json.loads(event.get('body')).get('uploadedBy') },
-                                    'SizeOfFile_MB': { 'N': str(float(json.loads(event.get('body')).get('sizeOfFile_MB'))) },
-                                    'TagsKeys': { 'SS': tag_keys_list },
-                                    'TagsValues': { 'SS': tag_values_list }
+                                    'SizeOfFile_MB': { 'N': str(float(json.loads(event.get('body')).get('sizeOfFile_MB'))) }
                                 }), parse_float=Decimal),
                                 'TableName': table_name
                             }
@@ -74,6 +67,32 @@ def handler(event, context):
                             }
                         }
                     ]
+                )
+                tag_keys_list = json.loads(event.get('body')).get('tagsKeys')
+                if(len(tag_keys_list) == 0):
+                    tag_keys_list.append("NULL")
+                tag_values_list = json.loads(event.get('body')).get('tagsValues')
+                if(len(tag_values_list) == 0):
+                    tag_values_list.append("NULL")
+                for key in tag_keys_list:
+                    if (key == ''):
+                        key = 'NULL'
+                for value in tag_values_list:
+                    if (value == ''):
+                        value = 'NULL'
+                update_expression = 'SET {}'.format(','.join(f'#{k}=:{k}' for k in tag_keys_list))
+                expression_attribute_values = {f':{k}': v for k, v in zip(tag_keys_list, tag_values_list)}
+                expression_attribute_names = {f'#{k}': k for k in tag_keys_list}
+
+                response = table.update_item(
+                    Key={
+                        'ID': 'FILE#' + new_file_id,
+                        'SK': 'FILE#' + new_file_id
+                    },
+                    UpdateExpression=update_expression,
+                    ExpressionAttributeValues=expression_attribute_values,
+                    ExpressionAttributeNames=expression_attribute_names,
+                    ReturnValues='UPDATED_NEW',
                 )
 
             except ClientError as e:

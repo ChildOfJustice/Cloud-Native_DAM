@@ -16,7 +16,7 @@ import * as AWS from "aws-sdk";
 import config from "../../../config";
 import {History} from "history";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
-import {downloadFile} from "../../../interfaces/componentsFunctions";
+import {downloadFile, getAllUserFiles} from "../../../interfaces/componentsFunctions";
 import LoadingScreen from "../../components/LoadingScreen";
 import Container from "react-bootstrap/Container";
 
@@ -159,23 +159,28 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             actionDescription: "load files metadata"
         }
 
-        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
-        console.log(promiseJson)
-        this.setState({
-            files: promiseJson['items'].map((item: any, i: number) => {
-                return {
-                    id: item['SK']['S'],
-                    name: item['Name']['S'],
-                    S3uniqueName: item['S3uniqueName']['S'],
-                    cloud: item['Cloud']['S'],
-                    uploadedBy: item['UploadedBy']['S'],
-                    ownedBy: item['OwnedBy']['S'],
-                    sizeOfFile_MB: item['SizeOfFile_MB']['N'],
-                    tagsKeys: item['TagsKeys']['SS'],
-                    tagsValues: item['TagsValues']['SS'],
-                }
-            })
-        })
+
+        let files = await getAllUserFiles(authToken, fetchParams)
+
+        this.setState({files: files})
+        //
+        // let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        // console.log(promiseJson)
+        // this.setState({
+        //     files: promiseJson['items'].map((item: any, i: number) => {
+        //         return {
+        //             id: item['SK']['S'],
+        //             name: item['Name']['S'],
+        //             S3uniqueName: item['S3uniqueName']['S'],
+        //             cloud: item['Cloud']['S'],
+        //             uploadedBy: item['UploadedBy']['S'],
+        //             ownedBy: item['OwnedBy']['S'],
+        //             sizeOfFile_MB: item['SizeOfFile_MB']['N'],
+        //             tagsKeys: item['TagsKeys']['SS'],
+        //             tagsValues: item['TagsValues']['SS'],
+        //         }
+        //     })
+        // })
     }
     getAllCoUsers = async () => {
         let clusterId = this.state.currentClusterId
@@ -440,7 +445,8 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
             {canUpload ?
                 <LinkContainer to={// @ts-ignore
                     "/private/uploadFile/" + this.state.currentClusterId}>
-                    <Navbar.Brand>Upload file</Navbar.Brand>
+                    {/*<Navbar.Brand>Upload file</Navbar.Brand>*/}
+                    <Button variant="primary">Upload file</Button>
                 </LinkContainer>
                 : ''}
         </div>
@@ -507,8 +513,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                             <th>File owner</th>
                             <th>Uploaded by</th>
                             <th>File size (MBs)</th>
-                            <th> User</th>
-                            <th>Tags</th>
+                            <th>Metadata</th>
                             <th>Delete</th>
                         </tr>
                         </thead>
@@ -537,10 +542,14 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                                         {fileMetadata.sizeOfFile_MB}
                                     </td>
                                     <td>
-                                        {fileMetadata.tagsKeys.map(keyName => <div>{keyName}</div>)}
-                                    </td>
-                                    <td>
-                                        {fileMetadata.tagsValues.map(keyName => <div>{keyName}</div>)}
+                                        <table>
+                                            {fileMetadata.tagsKeys.map((keyName, i) =>
+                                                (<tr>
+                                                    <td>{keyName}</td>
+                                                    <td>{fileMetadata.tagsValues[i]}</td>
+                                                </tr>)
+                                            )}
+                                        </table>
                                     </td>
                                     <td>
                                         <Button

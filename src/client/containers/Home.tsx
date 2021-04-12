@@ -42,6 +42,7 @@ class Home extends React.Component<IProps, IState> {
                         </p>
                     </Alert>
                 </Jumbotron>
+                {/*<LoadingScreen loadingMessage={"AAA"}></LoadingScreen>*/}
             </div>
         );
     }

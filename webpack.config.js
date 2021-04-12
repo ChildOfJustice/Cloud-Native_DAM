@@ -87,7 +87,7 @@ module.exports = {
         //     patterns: ['public/index.html']
         // }),
         new CopyWebpackPlugin({//just copies some files to the build dir
-            patterns: ['public/favicon.ico', 'public/manifest.json', 'public/logo192.png']
+            patterns: ['public/favicon.ico', 'public/spinner.png', 'public/manifest.json', 'public/logo192.png']
         }),
         new ExtractTextPlugin({ filename: "[name].css" }),
         new webpack.HotModuleReplacementPlugin(),

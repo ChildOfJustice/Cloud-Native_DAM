@@ -14,7 +14,12 @@ import * as AWS from "aws-sdk";
 import config from "../../../config";
 import {History} from "history";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
-import {downloadFile, getAllUserClusters} from "../../../interfaces/componentsFunctions";
+import {
+    downloadFile,
+    getAllUserClusters,
+    getAllUserFileOverviews,
+    getAllUserFiles
+} from "../../../interfaces/componentsFunctions";
 import LoadingScreen from "../../components/LoadingScreen";
 
 const mapStateToProps = ({demo}: IRootState) => {
@@ -62,7 +67,15 @@ class SearchFiles extends React.Component<ReduxType, IState> {
         try {
             await this.props.loadStore()
 
-            await this.getUserFiles()
+            const fetchParams: FetchParams = {
+                url: '/files',
+                token: this.props.authToken,
+                method: 'GET',
+
+                actionDescription: "get all user files"
+            }
+            let userFiles = await getAllUserFileOverviews(this.props.authToken, fetchParams)
+            this.setState({filesOverviews: userFiles})
             const setState = this.setState.bind(this)
             await getAllUserClusters(this.props, setState)
             await this.getAllSharedClusters()
@@ -73,7 +86,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
     }
 
     //Initialization functions
-    getUserFiles = async () => {
+    getUserFilesTODODELETE = async () => {
         const {authToken} = this.props;
 
         const fetchParams: FetchParams = {
@@ -85,26 +98,109 @@ class SearchFiles extends React.Component<ReduxType, IState> {
         }
 
         let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
+        console.log("WTF!");
         console.log(promiseJson)
-        this.setState({
-            filesOverviews: promiseJson['items'].map((item: any, i: number) => {
-                return {
-                    id: i,
-                    isChecked: false,
-                    file: {
-                        id: item['SK']['S'],
-                        name: item['Name']['S'],
-                        S3uniqueName: item['S3uniqueName']['S'],
-                        cloud: item['Cloud']['S'],
-                        uploadedBy: item['UploadedBy']['S'],
-                        ownedBy: item['OwnedBy']['S'],
-                        sizeOfFile_MB: item['SizeOfFile_MB']['N'],
-                        tagsKeys: item['TagsKeys']['SS'],
-                        tagsValues: item['TagsValues']['SS'],
-                    }
+        let filesOverviews = promiseJson['items'].map((item: any, i: number) => {
+            let fileOverview = {
+                id: i,
+                isChecked: false,
+                file: {
+                    id: item['SK']['S'],
+                    name: item['Name']['S'],
+                    S3uniqueName: item['S3uniqueName']['S'],
+                    cloud: item['Cloud']['S'],
+                    uploadedBy: item['UploadedBy']['S'],
+                    ownedBy: item['OwnedBy']['S'],
+                    sizeOfFile_MB: item['SizeOfFile_MB']['N'],
+                    tagsKeys: [""],
+                    tagsValues: [""],
                 }
-            })
+            }
+            // delete promiseJson['SK']
+            // delete promiseJson['Name']
+            // delete promiseJson['S3uniqueName']['S']
+            // delete promiseJson['Cloud']['S']
+            // delete promiseJson['UploadedBy']['S']
+            // delete promiseJson['OwnedBy']['S']
+            // delete promiseJson['SizeOfFile_MB']['N']
+            //
+            // function convert(obj: any) {
+            //     return Object.keys(obj).map(key => ({
+            //         name: key,
+            //         value: obj[key],
+            //     }));
+            // }
+            // for (var key in promiseJson) {
+            //     fileOverview.file.tagsKeys.push(key);
+            //     fileOverview.file.tagsValues.push(promiseJson[key]);
+            // }
+            console.log("!!!!1");
+            console.log(fileOverview);
+            return fileOverview
         })
+        console.log("!!!!2");
+        console.log(filesOverviews);
+        this.setState({filesOverviews: filesOverviews})
+
+        delete promiseJson['SK']
+        delete promiseJson['Name']
+        delete promiseJson['S3uniqueName']
+        delete promiseJson['Cloud']
+        delete promiseJson['UploadedBy']
+        delete promiseJson['OwnedBy']
+        delete promiseJson['SizeOfFile_MB']
+
+        let testArr1 = [""]
+        let testArr2 = [""]
+        for (var key in promiseJson) {
+            testArr1.push(key);
+            testArr2.push(promiseJson[key]);
+        }
+        console.log("!->HERE:")
+        console.log(testArr1)
+        console.log(testArr2)
+
+
+        // this.setState({
+        //     filesOverviews: promiseJson['items'].map((item: any, i: number) => {
+        //         let fileOverview = {
+        //             id: i,
+        //             isChecked: false,
+        //             file: {
+        //                 id: item['SK']['S'],
+        //                 name: item['Name']['S'],
+        //                 S3uniqueName: item['S3uniqueName']['S'],
+        //                 cloud: item['Cloud']['S'],
+        //                 uploadedBy: item['UploadedBy']['S'],
+        //                 ownedBy: item['OwnedBy']['S'],
+        //                 sizeOfFile_MB: item['SizeOfFile_MB']['N'],
+        //                 tagsKeys: [""],
+        //                 tagsValues: [""],
+        //             }
+        //         }
+        //         delete promiseJson['SK']
+        //         delete promiseJson['Name']
+        //         delete promiseJson['S3uniqueName']['S']
+        //         delete promiseJson['Cloud']['S']
+        //         delete promiseJson['UploadedBy']['S']
+        //         delete promiseJson['OwnedBy']['S']
+        //         delete promiseJson['SizeOfFile_MB']['N']
+        //
+        //         function convert(obj: any) {
+        //             return Object.keys(obj).map(key => ({
+        //                 name: key,
+        //                 value: obj[key],
+        //             }));
+        //         }
+        //         for (var key in promiseJson) {
+        //             fileOverview.file.tagsKeys.push(key);
+        //             fileOverview.file.tagsValues.push(promiseJson[key]);
+        //         }
+        //         console.log("!!!!1");
+        //         console.log(fileOverview);
+        //         return fileOverview
+        //     })
+        // })
 
     }
     getAllSharedClusters = async () => {
@@ -212,7 +308,15 @@ class SearchFiles extends React.Component<ReduxType, IState> {
         let promiseJson: any = await makeFetch<string>(fetchParams).catch(error => alert("ERROR: " + error))
         console.log(promiseJson)
         console.log("Successfully deleted the file")
-        await this.getUserFiles()
+        const fetchParams2: FetchParams = {
+            url: '/files',
+            token: this.props.authToken,
+            method: 'GET',
+
+            actionDescription: "get all user files"
+        }
+        let userFiles = await getAllUserFileOverviews(this.props.authToken, fetchParams2)
+        this.setState({filesOverviews: userFiles})
     }
 
     handleAddChosenFilesToCluster = async () => {
@@ -337,8 +441,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
                         <th>File owner</th>
                         <th>Uploaded by</th>
                         <th>File size (MBs)</th>
-                        <th> User</th>
-                        <th>Tags</th>
+                        <th>Metadata</th>
                         <th>Delete</th>
                     </tr>
                     </thead>

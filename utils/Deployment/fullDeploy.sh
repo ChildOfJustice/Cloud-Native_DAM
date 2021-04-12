@@ -1,5 +1,5 @@
 #!/bin/bash
-AmplifyAppID="du4rgzupnbtwy"
+AmplifyAppID="dmaj9fevu89w9"
 S3BucketName="sardor-test-code"
 S3StorageBucketName="sardor-app-storage"
 AwsRegion="eu-central-1"
@@ -18,7 +18,7 @@ echo "STEP 3 #### Deploying CloudFormation stack...";
 cd .. &&
 sh deploy-CF-template.sh $StackName &&
 
-echo "STEP 4 #### generating CloudFormation deployment script...";
+echo "STEP 4 #### Generating config file...";
 rm "../../../src/config.ts"
 aws cloudformation describe-stacks --stack-name $StackName > "stack_description.json" &&
 python3 ./generate_config_script.py $AwsRegion $S3StorageBucketName

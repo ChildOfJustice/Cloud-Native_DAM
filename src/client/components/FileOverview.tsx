@@ -48,12 +48,14 @@ export default class CheckBox extends React.Component<IProps, IState> {
                 <td>
                     {this.props.value.file.sizeOfFile_MB}
                 </td>
-                <td>
-                    {this.props.value.file.tagsKeys.map((keyName: any) => <div>{keyName}</div>)}
-                </td>
-                <td>
-                    {this.props.value.file.tagsValues.map((keyName: any) => <div>{keyName}</div>)}
-                </td>
+                <table>
+                    {this.props.value.file.tagsKeys.map((keyName, i) =>
+                        (<tr>
+                            <td>{keyName}</td>
+                            <td>{this.props.value.file.tagsValues[i]}</td>
+                        </tr>)
+                    )}
+                </table>
                 <td>
                     <Button
                         onClick={() => this.props.handleDeleteFile(this.props.parent, this.props.value.file.S3uniqueName, this.props.value.file.id)}
