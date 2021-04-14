@@ -5,3 +5,5 @@ In the root of the project folder:
 4) $ amplify add hosting
 5) $ amplify publish
 6) add the redirect rule from util/AWS/Amplify/addRoute
+    Source address: </^((?!\.(css|gif|ico|jpg|js|png|txt|svg|woff|ttf)$).)*$/>
+    Target address: /index.html

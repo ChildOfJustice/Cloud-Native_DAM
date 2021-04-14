@@ -21,6 +21,7 @@ import {
     getAllUserFiles
 } from "../../../interfaces/componentsFunctions";
 import LoadingScreen from "../../components/LoadingScreen";
+import {forEach} from "react-bootstrap/ElementChildren";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;
@@ -86,123 +87,6 @@ class SearchFiles extends React.Component<ReduxType, IState> {
     }
 
     //Initialization functions
-    getUserFilesTODODELETE = async () => {
-        const {authToken} = this.props;
-
-        const fetchParams: FetchParams = {
-            url: '/files',
-            token: authToken,
-            method: 'GET',
-
-            actionDescription: "load all user files"
-        }
-
-        let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
-        console.log("WTF!");
-        console.log(promiseJson)
-        let filesOverviews = promiseJson['items'].map((item: any, i: number) => {
-            let fileOverview = {
-                id: i,
-                isChecked: false,
-                file: {
-                    id: item['SK']['S'],
-                    name: item['Name']['S'],
-                    S3uniqueName: item['S3uniqueName']['S'],
-                    cloud: item['Cloud']['S'],
-                    uploadedBy: item['UploadedBy']['S'],
-                    ownedBy: item['OwnedBy']['S'],
-                    sizeOfFile_MB: item['SizeOfFile_MB']['N'],
-                    tagsKeys: [""],
-                    tagsValues: [""],
-                }
-            }
-            // delete promiseJson['SK']
-            // delete promiseJson['Name']
-            // delete promiseJson['S3uniqueName']['S']
-            // delete promiseJson['Cloud']['S']
-            // delete promiseJson['UploadedBy']['S']
-            // delete promiseJson['OwnedBy']['S']
-            // delete promiseJson['SizeOfFile_MB']['N']
-            //
-            // function convert(obj: any) {
-            //     return Object.keys(obj).map(key => ({
-            //         name: key,
-            //         value: obj[key],
-            //     }));
-            // }
-            // for (var key in promiseJson) {
-            //     fileOverview.file.tagsKeys.push(key);
-            //     fileOverview.file.tagsValues.push(promiseJson[key]);
-            // }
-            console.log("!!!!1");
-            console.log(fileOverview);
-            return fileOverview
-        })
-        console.log("!!!!2");
-        console.log(filesOverviews);
-        this.setState({filesOverviews: filesOverviews})
-
-        delete promiseJson['SK']
-        delete promiseJson['Name']
-        delete promiseJson['S3uniqueName']
-        delete promiseJson['Cloud']
-        delete promiseJson['UploadedBy']
-        delete promiseJson['OwnedBy']
-        delete promiseJson['SizeOfFile_MB']
-
-        let testArr1 = [""]
-        let testArr2 = [""]
-        for (var key in promiseJson) {
-            testArr1.push(key);
-            testArr2.push(promiseJson[key]);
-        }
-        console.log("!->HERE:")
-        console.log(testArr1)
-        console.log(testArr2)
-
-
-        // this.setState({
-        //     filesOverviews: promiseJson['items'].map((item: any, i: number) => {
-        //         let fileOverview = {
-        //             id: i,
-        //             isChecked: false,
-        //             file: {
-        //                 id: item['SK']['S'],
-        //                 name: item['Name']['S'],
-        //                 S3uniqueName: item['S3uniqueName']['S'],
-        //                 cloud: item['Cloud']['S'],
-        //                 uploadedBy: item['UploadedBy']['S'],
-        //                 ownedBy: item['OwnedBy']['S'],
-        //                 sizeOfFile_MB: item['SizeOfFile_MB']['N'],
-        //                 tagsKeys: [""],
-        //                 tagsValues: [""],
-        //             }
-        //         }
-        //         delete promiseJson['SK']
-        //         delete promiseJson['Name']
-        //         delete promiseJson['S3uniqueName']['S']
-        //         delete promiseJson['Cloud']['S']
-        //         delete promiseJson['UploadedBy']['S']
-        //         delete promiseJson['OwnedBy']['S']
-        //         delete promiseJson['SizeOfFile_MB']['N']
-        //
-        //         function convert(obj: any) {
-        //             return Object.keys(obj).map(key => ({
-        //                 name: key,
-        //                 value: obj[key],
-        //             }));
-        //         }
-        //         for (var key in promiseJson) {
-        //             fileOverview.file.tagsKeys.push(key);
-        //             fileOverview.file.tagsValues.push(promiseJson[key]);
-        //         }
-        //         console.log("!!!!1");
-        //         console.log(fileOverview);
-        //         return fileOverview
-        //     })
-        // })
-
-    }
     getAllSharedClusters = async () => {
 
         const {authToken} = this.props;
@@ -235,7 +119,8 @@ class SearchFiles extends React.Component<ReduxType, IState> {
             clusters.push({
                 clusterId: permission.clusterId,
                 name: permission.clusterName,
-                ownerUserName: permission.clusterOwnerUserName
+                ownerUserName: permission.clusterOwnerUserName,
+                permissions: permission.permissions
             })
         }
         this.setState({clusters: clusters})
@@ -320,6 +205,17 @@ class SearchFiles extends React.Component<ReduxType, IState> {
     }
 
     handleAddChosenFilesToCluster = async () => {
+
+        for (let cluster of this.state.clusters){
+            if(cluster.clusterId === this.state.chosenClusterId){
+                if(cluster.permissions === undefined) //your own cluster
+                    break;
+                else if(cluster.permissions[1] !== "1"){
+                    alert("You do not have permissions to add files to this cluster.")
+                    return
+                }
+            }
+        }
 
         const {authToken} = this.props;
 

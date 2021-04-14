@@ -20,6 +20,7 @@ export interface Cluster {
     clusterId?: string
     name?: string
     ownerUserName?: string
+    permissions?: string
     // createdDate: string
 }
 
