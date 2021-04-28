@@ -4,6 +4,7 @@
     "strict": true,
     "baseUrl": "./",
     "outDir": "build",
+    "sourceMap": false,
     "removeComments": true,
     "experimentalDecorators": true,
     "target": "es6",

@@ -6,11 +6,11 @@ import {PromiseOutput} from "../interfaces/promiseOutput";
 
 class CognitoService {
     private  config = {
-        region: config.userPoolRegion,
+        region: config.AWS.Cognito.userPoolRegion,
     }
 
-    private secretHash: string = config.secretHash
-    private clientId: string = config.clientId
+    // private secretHash: string = config.AWS.Cognito.secretHash
+    // private clientId: string = config.AWS.Cognito.clientId
 
     public cognitoIdentity: any;
     constructor() {
@@ -59,94 +59,94 @@ class CognitoService {
 
     }
 
-    public async signUpUser(username: string, password: string, userAttr: Array<any>): Promise<PromiseOutput>{
-        const params = {
-            ClientId: this.clientId,
-            Password: password,
-            Username: username,
-            SecretHash: this.generateHash(username),
-            UserAttributes: userAttr
-        }
+    // public async signUpUser(username: string, password: string, userAttr: Array<any>): Promise<PromiseOutput>{
+    //     const params = {
+    //         ClientId: this.clientId,
+    //         Password: password,
+    //         Username: username,
+    //         SecretHash: this.generateHash(username),
+    //         UserAttributes: userAttr
+    //     }
 
-        try{
-            const data = await this.cognitoIdentity.signUp(params).promise();
-            console.log(data)
-            return {
-                success: true,
-                msg: data
-            }
-        } catch (error) {
-            console.log(error)
-            return {
-                success: false,
-                msg: error.message
-            }
-        }
-    }
+    //     try{
+    //         const data = await this.cognitoIdentity.signUp(params).promise();
+    //         console.log(data)
+    //         return {
+    //             success: true,
+    //             msg: data
+    //         }
+    //     } catch (error) {
+    //         console.log(error)
+    //         return {
+    //             success: false,
+    //             msg: error.message
+    //         }
+    //     }
+    // }
 
-    public async confirmUser(){
+    // public async confirmUser(){
 
-    }
+    // }
 
-    public async verifyAccount(username: string, code: string): Promise<PromiseOutput>{
-        const params = {
-            ClientId: this.clientId,
-            ConfirmationCode: code,
-            SecretHash: this.generateHash(username),
-            Username: username
-        }
+    // public async verifyAccount(username: string, code: string): Promise<PromiseOutput>{
+    //     const params = {
+    //         ClientId: this.clientId,
+    //         ConfirmationCode: code,
+    //         SecretHash: this.generateHash(username),
+    //         Username: username
+    //     }
 
-        try{
-            const data = await this.cognitoIdentity.confirmSignUp(params).promise();
-            console.log(data)
-            return {
-                success: true,
-                msg: data
-            }
-        } catch (error) {
-            console.log(error)
-            return {
-                success: false,
-                msg: error.message
-            }
-        }
-    }
+    //     try{
+    //         const data = await this.cognitoIdentity.confirmSignUp(params).promise();
+    //         console.log(data)
+    //         return {
+    //             success: true,
+    //             msg: data
+    //         }
+    //     } catch (error) {
+    //         console.log(error)
+    //         return {
+    //             success: false,
+    //             msg: error.message
+    //         }
+    //     }
+    // }
 
-    public async signInUser(username: string, password: string): Promise<PromiseOutput>{
-        const params = {
-            AuthFlow: 'USER_PASSWORD_AUTH',
-            ClientId: this.clientId,
-            AuthParameters: {
-                'USERNAME': username,
-                'PASSWORD': password,
-                'SECRET_HASH': this.generateHash(username)
-            }
-        }
+    // public async signInUser(username: string, password: string): Promise<PromiseOutput>{
+    //     const params = {
+    //         AuthFlow: 'USER_PASSWORD_AUTH',
+    //         ClientId: this.clientId,
+    //         AuthParameters: {
+    //             'USERNAME': username,
+    //             'PASSWORD': password,
+    //             'SECRET_HASH': this.generateHash(username)
+    //         }
+    //     }
 
-        try{
-            let data = await this.cognitoIdentity.initiateAuth(params).promise()
-            console.log(data)
+    //     try{
+    //         let data = await this.cognitoIdentity.initiateAuth(params).promise()
+    //         console.log(data)
 
-            return {
-                success: true,
-                msg: data
-            }
-        } catch (error) {
-            console.log(error)
-            return {
-                success: false,
-                msg: error.message
-            }
-        }
+    //         return {
+    //             success: true,
+    //             msg: data
+    //         }
+    //     } catch (error) {
+    //         console.log(error)
+    //         return {
+    //             success: false,
+    //             msg: error.message
+    //         }
+    //     }
 
 
-    }
+    // }
 
-    private generateHash(username: string): string{
-        return crypto.createHmac('SHA256', this.secretHash)
-            .update(username + this.clientId)
-            .digest('base64')
-    }
+    // private generateHash(username: string): string{
+    //     return crypto.createHmac('SHA256', this.secretHash)
+    //         .update(username + this.clientId)
+    //         .digest('base64')
+    // }
 
 
 }

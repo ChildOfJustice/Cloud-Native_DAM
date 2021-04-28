@@ -1,5 +1,5 @@
 export interface FileMetadata {
-    id: number | null
+    id?: number
     name: string
     S3uniqueName: string
     cloud: string
@@ -13,12 +13,14 @@ export interface FileMetadata {
 export interface File_ClusterSub {
     fileId: number
     clusterId: string
+    name?: string
 }
 
 export interface Cluster {
-    clusterId: number | null
-    name: string
-    ownerUserId: string
+    clusterId?: string
+    name?: string
+    ownerUserName?: string
+    permissions?: string
     // createdDate: string
 }
 
@@ -26,9 +28,13 @@ export interface Role {
     role: string
 }
 
-export interface CoUser {
-    coUserId: string
+export interface Permission {
     clusterId: number
-    permissions: string
-    permissionGiverUserId: string
+    clusterName?: string
+    permissionId?: string
+    principalUserName?: string
+    permissionGiverUserId?: string
+    permissionGiverUserName?: string
+    permissions?: string
+    clusterOwnerUserName?: string
 }

@@ -1,0 +1,693 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: |
+  Example HTTP API with a JWT authorizer. This template includes a Cognito user pool as the issuer for the JWT authorizer 
+  and a Cognito app client as the audience for the authorizer. The outputs include a URL for a Cognito hosted UI where clients can 
+  sign up and sign in to receive a JWT. After a client signs in, the client is redirected to your HTTP API with an access token 
+  in the URL. To invoke the API with the access token, change the '#' in the URL to a '?' to use the token as a query string parameter.
+Transform: 'AWS::Serverless-2016-10-31'
+
+Parameters:
+  CognitoCallBackUrl:
+    Type: String
+    Default: http://localhost
+  CognitoOriginUrl:
+    Type: String
+    Default: http://localhost
+  CognitoLogOutUrl:
+    Type: String
+    Default: http://localhost
+  CognitoDomain:
+    Type: String
+    Default: amplifytestappdomain
+
+Resources:
+  #----------------------------------IAM-----------------------------------
+  ProgrammaticUserForS3:
+    Type: AWS::IAM::User
+    Properties:
+      Policies: 
+        - PolicyName: ManagerS3Policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                    - s3:DeleteObjectTagging
+                    - s3:PutObject
+                    - s3:DeleteObject
+                    - s3:GetObject
+                    - s3:ReplicateTags
+                    - s3:PutObjectVersionTagging
+                    - s3:PutObjectTagging
+                Resource: !Sub
+                  - ${bucketArn}/*
+                  - { bucketArn: !GetAtt StorageBucket.Arn }
+      UserName: 'ManagerS3'
+  AccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties: 
+      UserName: !Ref ProgrammaticUserForS3
+  #----------------------------------Amplify-----------------------------------
+  # Type: AWS::Amplify::App
+  # Properties:
+  #   Name: amplifytestapp
+  #   OauthToken: String
+  #   Repository: String
+  #   Tags:
+  #     - Tag
+  # Type: AWS::Amplify::Branch
+  # Properties:
+  #   AppId: String
+  #   BasicAuthConfig:
+  #     BasicAuthConfig
+  #   BranchName: String
+  #   BuildSpec: String
+  #   Description: String
+  #   EnableAutoBuild: Boolean
+  #   EnablePerformanceMode: Boolean
+  #   EnablePullRequestPreview: Boolean
+  #   EnvironmentVariables:
+  #     - EnvironmentVariable
+  #   PullRequestEnvironmentName: String
+  #   Stage: String
+  #   Tags:
+  #     - Tag
+  #----------------------------------API-----------------------------------
+  MyAPI:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Description: Example HTTP API
+      Name: api-with-auth
+      ProtocolType: HTTP
+      # Target: !GetAtt MyLambdaFunction.Arn
+      CorsConfiguration:
+        AllowHeaders:
+          - '*'
+        AllowMethods:
+          - '*'
+        AllowOrigins:
+          - !Ref CognitoOriginUrl
+  #-----------------INTEGRATIONS
+  TestIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MyLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  #////////Users
+  UsersIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  UsersDeleteIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersDeleteLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  #////////Clusters
+  ClustersIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClustersLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  ClustersDeleteIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClustersDeleteLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  #////////Files
+  FilesIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FilesLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  #////////Permissions
+  PermissionsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PermissionsLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+
+  #////////Admin
+  AdminIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  #-----------------ROUTES
+  TestPOSTRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'test-op'
+      RouteKey: 'GET /test'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref TestIntegration
+
+  #////////Users
+  UsersRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'users-post'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'POST /users'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref UsersIntegration
+  UsersDeleteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'users-delete'
+      RouteKey: 'DELETE /users'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref UsersDeleteIntegration
+
+  #////////Clusters
+  ClustersPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'clusters-post'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'POST /clusters'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref ClustersIntegration
+  ClustersGetProxyRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'clusters-get'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'GET /clusters/{proxy+}'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref ClustersIntegration
+  ClustersGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'clusters-get'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'GET /clusters'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref ClustersIntegration
+  ClustersDeleteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'clusters-delete'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'DELETE /clusters/delete'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref ClustersDeleteIntegration
+
+  #////////Files
+  FilesGetProxyRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'files-get'
+      # DOES NOT WORK: 'ANY /users/{proxy+}'
+      RouteKey: 'GET /files/{proxy+}'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref FilesIntegration
+  FilesGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'files-get'
+      RouteKey: 'GET /files'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref FilesIntegration
+  FilesPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'files-post'
+      RouteKey: 'POST /files'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref FilesIntegration
+  FilesDeleteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'files-delete'
+      RouteKey: 'DELETE /files'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref FilesIntegration
+
+  #////////Permissions
+  PermissionsPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'permissions-post'
+      RouteKey: 'POST /permissions'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref PermissionsIntegration
+  PermissionsGetProxyRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'permissions-get'
+      RouteKey: 'GET /permissions/{proxy+}'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref PermissionsIntegration
+  PermissionsGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'permissions-get'
+      RouteKey: 'GET /permissions'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref PermissionsIntegration
+  PermissionsDeleteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'permissions-delete'
+      RouteKey: 'DELETE /permissions'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref PermissionsIntegration
+
+  #////////Admin
+  AdminPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'admin-post'
+      RouteKey: 'POST /admin'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref AdminIntegration
+  #-----------------API GATEWAY DEPLOYMENT
+  TestDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    Properties:
+      ApiId: !Ref MyAPI
+      Description: 'Default deployment'
+      StageName: '$default'
+    DependsOn:
+      - TestStage
+      - TestPOSTRoute
+      - UsersRoute
+  TestStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref MyAPI
+      AutoDeploy: true
+      # DeploymentId: !Ref TestDeployment
+      Description: 'default stage'
+      StageName: '$default'
+  # DefaultRouteOverrides:
+  #   Type: AWS::ApiGatewayV2::ApiGatewayManagedOverrides
+  #   Properties:
+  #     ApiId: !Ref MyAPI
+  #     Route:
+  #       AuthorizationType: JWT
+  #       AuthorizerId: !Ref JWTAuthorizer
+  JWTAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizerType: JWT
+      IdentitySource:
+#        - '$request.querystring.access_token'
+        - '$request.header.Authorization'
+      JwtConfiguration:
+        Audience:
+          - !Ref AppClient
+        Issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+      Name: test-jwt-authorizer
+
+  #----------------------------------BACKEND-----------------------------------
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      BucketName: sardor-app-storage
+      CorsConfiguration: 
+        CorsRules:
+          -
+            AllowedOrigins: 
+              - !Ref CognitoOriginUrl
+            AllowedMethods: 
+              - POST
+              - GET
+              - PUT
+              - DELETE
+              - HEAD
+            AllowedHeaders: 
+              - "*"
+  #-----------------API GATEWAY DEPLOYMENT
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "CloudNativeDAM_DB"
+      AttributeDefinitions:
+        -
+          AttributeName: "ID"
+          AttributeType: "S"
+        -
+          AttributeName: "SK"
+          AttributeType: "S"
+        -
+          AttributeName: "Data"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "ID"
+          KeyType: "HASH"
+        -
+          AttributeName: "SK"
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "1"
+        WriteCapacityUnits: "1"
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "Data-index"
+          KeySchema:
+            -
+              AttributeName: "Data"
+              KeyType: "HASH"
+            -
+              AttributeName: "SK"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "1"
+            WriteCapacityUnits: "1"
+        -
+          IndexName: "File-Clusters-index"
+          KeySchema:
+            -
+              AttributeName: "SK"
+              KeyType: "HASH"
+            -
+              AttributeName: "ID"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "1"
+            WriteCapacityUnits: "1"
+
+  #-----------------LAMBDA FUNCTIONS
+  MyLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: MyLambdaFunction.handler
+      CodeUri: ../../Serverless/Lambdas/MyLambdaFunction.py
+  UsersLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: UsersHandler.handler
+      CodeUri: ../../Serverless/Lambdas/UsersHandler.py
+  UsersDeleteLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: UsersDeleteHandler.handler
+      CodeUri: ../../Serverless/Lambdas/UsersDeleteHandler.py
+  ClustersLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: ClustersHandler.handler
+      CodeUri: ../../Serverless/Lambdas/ClustersHandler.py
+  ClustersDeleteLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: ClustersDeleteHandler.handler
+      CodeUri: ../../Serverless/Lambdas/ClustersDeleteHandler.py
+  FilesLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: FilesHandler.handler
+      CodeUri: ../../Serverless/Lambdas/FilesHandler.py
+  PermissionsLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: PermissionsHandler.handler
+      CodeUri: ../../Serverless/Lambdas/PermissionsHandler.py
+  AdminLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt FunctionExecutionRole.Arn
+      Handler: AdminHandler.handler
+      CodeUri: ../../Serverless/Lambdas/AdminHandler.py
+
+  #--------------------------------Roles-----------------------------------
+  APIInvokeTestLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref MyLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeUsersLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UsersLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeUsersDeleteLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UsersDeleteLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeClustersLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ClustersLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeClustersDeleteLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ClustersDeleteLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeFilesLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref FilesLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokePermissionsLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PermissionsLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeAdminLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+
+
+  LambdaDynamoDBWritePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:UpdateItem
+              - dynamodb:DescribeTable
+              - dynamodb:Query
+            Resource:
+              - arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB
+              - arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB/index/*
+
+  FunctionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
+        - !Ref LambdaDynamoDBWritePolicy
+  #--------------------------------Cognito---------------------------------
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: http-api-user-pool
+      AutoVerifiedAttributes:
+        - email
+      AliasAttributes:
+        - email
+#      UsernameAttributes:
+#        - email
+      Schema:
+        # - Name: name
+        #   AttributeDataType: String
+        #   Mutable: true
+        #   Required: true
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+  AppClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthScopes:
+        - aws.cognito.signin.user.admin
+        - email
+        - openid
+        - profile
+      AllowedOAuthFlowsUserPoolClient: true
+      ClientName: api-app-client
+      CallbackURLs:
+        - !Ref CognitoCallBackUrl
+      LogoutURLs:
+        - !Ref CognitoLogOutUrl
+      ExplicitAuthFlows:
+        - ALLOW_ADMIN_USER_PASSWORD_AUTH
+        # - ALLOW_CUSTOM_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        # - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      GenerateSecret: true
+      UserPoolId: !Ref UserPool
+      SupportedIdentityProviders:
+        - COGNITO
+  HostedUI:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref CognitoDomain
+      UserPoolId: !Ref UserPool
+Outputs:
+  SignupURL:
+    Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile+aws.cognito.signin.user.admin&redirect_uri=${CognitoCallBackUrl}
+  ApiEndpoint:
+    Value: !GetAtt MyAPI.ApiEndpoint
+  AccessKeyId:
+    Value: !Ref AccessKey
+  SecretAccessKey:
+    Value: !GetAtt AccessKey.SecretAccessKey
