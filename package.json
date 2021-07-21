@@ -5,13 +5,13 @@
   "scripts": {
     "build": "rm -rf ./build/* && webpack --config webpack.config.js",
     "deploy": "sh ./utils/Deployment/fullDeploy.sh",
-    "package": "sh ./utils/Deployment/package.sh",
+    "start-webpack": "webpack && webpack-dev-server --mode development",
+
     "serve": "serve -s build",
     "build-ts": "rm -rf ./build/* && react-scripts build",
     "start": "react-scripts start",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "start2": "webpack && webpack-dev-server --mode development"
+    "eject": "react-scripts eject"
   },
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.9",
