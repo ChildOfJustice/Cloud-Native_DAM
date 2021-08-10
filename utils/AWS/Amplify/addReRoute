@@ -1,5 +1,0 @@
-In AWS Console > Amplify > Rewrites and redirects...
-Edit the redirects to create a redirect with:
-Source address: </^((?!\.(css|gif|ico|jpg|js|png|txt|svg|woff|ttf)$).)*$/>
-Target address: /index.html
-Type: 200

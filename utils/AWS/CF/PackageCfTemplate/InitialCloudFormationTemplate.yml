@@ -1,21 +1,13 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: |
-  Example HTTP API with a JWT authorizer. This template includes a Cognito user pool as the issuer for the JWT authorizer 
+  Cloud-native Digital Asset Management system template. It includes a Cognito user pool as the issuer for the JWT authorizer 
   and a Cognito app client as the audience for the authorizer. The outputs include a URL for a Cognito hosted UI where clients can 
   sign up and sign in to receive a JWT. After a client signs in, the client is redirected to your HTTP API with an access token 
   in the URL. To invoke the API with the access token, change the '#' in the URL to a '?' to use the token as a query string parameter.
+
 Transform: 'AWS::Serverless-2016-10-31'
 
 Parameters:
-  CognitoCallBackUrl:
-    Type: String
-    Default: http://localhost
-  CognitoOriginUrl:
-    Type: String
-    Default: http://localhost
-  CognitoLogOutUrl:
-    Type: String
-    Default: http://localhost
   CognitoDomain:
     Type: String
     Default: amplifytestappdomain
@@ -86,7 +78,7 @@ Resources:
         AllowMethods:
           - '*'
         AllowOrigins:
-          - !Ref CognitoOriginUrl
+          - !Sub https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com
   #-----------------INTEGRATIONS
   TestIntegration:
     Type: AWS::ApiGatewayV2::Integration
@@ -416,7 +408,7 @@ Resources:
         CorsRules:
           -
             AllowedOrigins: 
-              - !Ref CognitoOriginUrl
+              - !Sub https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com
             AllowedMethods: 
               - POST
               - GET
@@ -664,9 +656,9 @@ Resources:
       AllowedOAuthFlowsUserPoolClient: true
       ClientName: api-app-client
       CallbackURLs:
-        - !Ref CognitoCallBackUrl
+        - !Sub https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com/private/area
       LogoutURLs:
-        - !Ref CognitoLogOutUrl
+        - !Sub https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com
       ExplicitAuthFlows:
         - ALLOW_ADMIN_USER_PASSWORD_AUTH
         # - ALLOW_CUSTOM_AUTH
@@ -682,12 +674,52 @@ Resources:
     Properties:
       Domain: !Ref CognitoDomain
       UserPoolId: !Ref UserPool
+
+
+  #----------------------------------Amplify-----------------------------------
+  AmplifyFrontendApp:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: amplifytestapp
+      # AccessToken: "ghp_SECRET"
+      # Repository: "https://github.com/ChildOfJustice/Cloud-Native_DAM-frontend-only.git"
+      # BuildSpec: |-
+      #   version: 0.1
+      #   frontend:
+      #     phases:
+      #       build:
+      #         commands:
+      #           - npm i
+      #           - npm run build
+      #     artifacts:
+      #       baseDirectory: build/
+      #       files:
+      #         - '*'
+      CustomRules: 
+        - Source: "</^((?!\\.(css|gif|ico|jpg|js|png|txt|svg|woff|ttf)$).)*$/>"
+          Status: 200
+          Target: "/index.html"
+      Tags:
+        - Key: Module
+          Value: SardorTestDAM
+  # AmplifyBranch:
+  #     Type: AWS::Amplify::Branch
+  #     Properties:
+  #       BranchName: master
+  #       AppId: !GetAtt AmplifyFrontendApp.AppId
+  #       Description: Master Branch
+  #       EnableAutoBuild: true
+  #       Tags:
+  #         - Key: Module
+  #           Value: SardorTestDAM
 Outputs:
   SignupURL:
-    Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile+aws.cognito.signin.user.admin&redirect_uri=${CognitoCallBackUrl}
+    Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile+aws.cognito.signin.user.admin&redirect_uri=https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com/private/area
   ApiEndpoint:
     Value: !GetAtt MyAPI.ApiEndpoint
   AccessKeyId:
     Value: !Ref AccessKey
   SecretAccessKey:
     Value: !GetAtt AccessKey.SecretAccessKey
+  AppId:
+    Value: !GetAtt AmplifyFrontendApp.AppId

@@ -1,0 +1,2 @@
+cd ../../../ &&
+amplify publish -y

@@ -1,22 +1,13 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: "Example HTTP API with a JWT authorizer. This template includes a Cognito\
-  \ user pool as the issuer for the JWT authorizer \nand a Cognito app client as the\
-  \ audience for the authorizer. The outputs include a URL for a Cognito hosted UI\
-  \ where clients can \nsign up and sign in to receive a JWT. After a client signs\
+Description: "Cloud-native Digital Asset Management system template. It includes a\
+  \ Cognito user pool as the issuer for the JWT authorizer \nand a Cognito app client\
+  \ as the audience for the authorizer. The outputs include a URL for a Cognito hosted\
+  \ UI where clients can \nsign up and sign in to receive a JWT. After a client signs\
   \ in, the client is redirected to your HTTP API with an access token \nin the URL.\
   \ To invoke the API with the access token, change the '#' in the URL to a '?' to\
   \ use the token as a query string parameter.\n"
 Transform: AWS::Serverless-2016-10-31
 Parameters:
-  CognitoCallBackUrl:
-    Type: String
-    Default: http://localhost
-  CognitoOriginUrl:
-    Type: String
-    Default: http://localhost
-  CognitoLogOutUrl:
-    Type: String
-    Default: http://localhost
   CognitoDomain:
     Type: String
     Default: amplifytestappdomain
@@ -63,7 +54,7 @@ Resources:
         AllowMethods:
         - '*'
         AllowOrigins:
-        - Ref: CognitoOriginUrl
+        - Fn::Sub: https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com
   TestIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -424,7 +415,7 @@ Resources:
       CorsConfiguration:
         CorsRules:
         - AllowedOrigins:
-          - Ref: CognitoOriginUrl
+          - Fn::Sub: https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com
           AllowedMethods:
           - POST
           - GET
@@ -484,7 +475,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: MyLambdaFunction.handler
-      CodeUri: s3://sardor-test-code/848ea0b05e34c128484a62adc03674be
+      CodeUri: s3://sardor-test-code/49993203df5435df807591a6608b5c61
   UsersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -494,7 +485,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersHandler.handler
-      CodeUri: s3://sardor-test-code/3a5d39716daab6f1f7e433375965a23c
+      CodeUri: s3://sardor-test-code/5a4230f90c9d69097dfa592578e65c8f
   UsersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -504,7 +495,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: UsersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/6f0b899c0df0b3e1101a064c7f87e7d9
+      CodeUri: s3://sardor-test-code/86a1d6e12978fbcd532307b9c14b0455
   ClustersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -514,7 +505,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersHandler.handler
-      CodeUri: s3://sardor-test-code/ed8b056a70103231a951c9ca17161980
+      CodeUri: s3://sardor-test-code/fff27e62f09403b0bc4991759452731c
   ClustersDeleteLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -524,7 +515,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: ClustersDeleteHandler.handler
-      CodeUri: s3://sardor-test-code/d2b6fc95e58eb9a931a54aa7e236c6be
+      CodeUri: s3://sardor-test-code/91125913906427e4a29a1989fffca5ef
   FilesLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -534,7 +525,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: FilesHandler.handler
-      CodeUri: s3://sardor-test-code/d52f591bd6f5b4760d89268e16899173
+      CodeUri: s3://sardor-test-code/baa89653caa985f78fca8793dd6fc7b1
   PermissionsLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -544,7 +535,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: PermissionsHandler.handler
-      CodeUri: s3://sardor-test-code/a361b38f87509cdb01d1b99438c843e9
+      CodeUri: s3://sardor-test-code/e44afb156c507280a278827c29314657
   AdminLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -554,7 +545,7 @@ Resources:
         - FunctionExecutionRole
         - Arn
       Handler: AdminHandler.handler
-      CodeUri: s3://sardor-test-code/8299f58f58e070a1dbfe8b13813a5a9f
+      CodeUri: s3://sardor-test-code/beba9c3d7ed606a15f6f2dd5e61865d2
   APIInvokeTestLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -686,9 +677,9 @@ Resources:
       AllowedOAuthFlowsUserPoolClient: true
       ClientName: api-app-client
       CallbackURLs:
-      - Ref: CognitoCallBackUrl
+      - Fn::Sub: https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com/private/area
       LogoutURLs:
-      - Ref: CognitoLogOutUrl
+      - Fn::Sub: https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com
       ExplicitAuthFlows:
       - ALLOW_ADMIN_USER_PASSWORD_AUTH
       - ALLOW_USER_PASSWORD_AUTH
@@ -705,10 +696,21 @@ Resources:
         Ref: CognitoDomain
       UserPoolId:
         Ref: UserPool
+  AmplifyFrontendApp:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: amplifytestapp
+      CustomRules:
+      - Source: </^((?!\.(css|gif|ico|jpg|js|png|txt|svg|woff|ttf)$).)*$/>
+        Status: 200
+        Target: /index.html
+      Tags:
+      - Key: Module
+        Value: SardorTestDAM
 Outputs:
   SignupURL:
     Value:
-      Fn::Sub: https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile+aws.cognito.signin.user.admin&redirect_uri=${CognitoCallBackUrl}
+      Fn::Sub: https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile+aws.cognito.signin.user.admin&redirect_uri=https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com/private/area
   ApiEndpoint:
     Value:
       Fn::GetAtt:
@@ -722,3 +724,8 @@ Outputs:
       Fn::GetAtt:
       - AccessKey
       - SecretAccessKey
+  AppId:
+    Value:
+      Fn::GetAtt:
+      - AmplifyFrontendApp
+      - AppId
