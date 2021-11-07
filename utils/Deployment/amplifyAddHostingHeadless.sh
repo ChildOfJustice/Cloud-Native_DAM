@@ -1,6 +1,6 @@
 #!/usr/bin/expect -f
 
-cd ../../../
+cd ../../
 
 set timeout -1
 spawn amplify add hosting

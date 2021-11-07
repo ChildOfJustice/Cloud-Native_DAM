@@ -23,7 +23,7 @@ stack_description_json_file.close()
 
 stack_description_dictionary = json.loads(stack_description_json)
 
-result_file = open("../../../src/config.ts", 'w')
+result_file = open("../../src/config.ts", 'w')
 
 output_string = ("export default {\n"
 "    AppConfig: {\n"

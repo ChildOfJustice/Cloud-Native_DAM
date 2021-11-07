@@ -31,7 +31,7 @@ AMPLIFY="{\\
 \\"appId\\":\\"%s\\"\\
 }"
 
-cd ../../../
+cd ../../
 
 amplify init \\
 --amplify $AMPLIFY \\
