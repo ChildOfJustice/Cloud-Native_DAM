@@ -23,6 +23,13 @@ export function demoReducer(state: IDemoState = init, action: DemoActions): IDem
       localStorage.removeItem('store')
       localStorage.setItem('store', JSON.stringify(state))
       return {...state};
+    case Constants.CLEAR_STORE:
+      localStorage.removeItem('store')
+      state.idToken = ''
+      state.authToken = ''
+      state.loading = false
+      localStorage.setItem('store', JSON.stringify(state))
+      return {...state};
     case Constants.SET_ID_TOKEN:
       return {...state, ...action.payload};
     case Constants.SET_AUTH_TOKEN:

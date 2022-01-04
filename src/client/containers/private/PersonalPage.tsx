@@ -35,6 +35,7 @@ const mapDispatcherToProps = (dispatch: Dispatch<DemoActions>) => {
         setAuthToken: (token: string) => tokensService.setAuthToken(dispatch, token),
         loadStore: () => storeService.loadStore(dispatch),
         saveStore: () => storeService.saveStore(dispatch),
+        clearStore: () => storeService.clearStore(dispatch),
     }
 }
 
@@ -54,7 +55,7 @@ interface IState {
     userRole: string
     queryToDB: string
     dbResponse: string
-    usedStorageSize: number | string
+    usedStorageSize: number
     loading: boolean
     loadingMessage: string
 }
@@ -135,7 +136,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         this.setState({userRole: promiseJson['role']})
     }
     getUsedStorageSize = async () => {
-        //// ERROR: TypeError: Cannot read property 'updater' of undefined
+
         const {authToken} = this.props;
 
         let fetchParams: FetchParams = {
@@ -316,7 +317,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
             let promiseJson: any = await makeFetch<any>(fetchParams).catch(error => alert("ERROR: " + error))
             console.log(promiseJson)
 
-            // this.setState({loading: false, loadingMessage: ""})
+            await this.props.clearStore()
         } else {
             console.log("ERROR WITH DELETING COGNITO USER: " + promiseOutput.msg)
             return
@@ -324,6 +325,11 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
 
     }
+    logout = async () => {
+        await this.props.clearStore()
+        this.props.history.push("/")
+    }
+
 
     makeAdminQuery = () => {
         if (this.state.queryToDB === '') {
@@ -405,12 +411,14 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                 <div>
                     {/*Your user id is: "{this.state.userId}".<br/>*/}
 
+                    <Button onClick={() => this.logout()} variant="danger">Logout</Button> <br/>
+
                     <Container>
                         <Row>
                             <Col>Your role is: "{this.state.userRole}".<br/></Col>
                         </Row>
                         <Row>
-                            Your current used storage size is {this.state.usedStorageSize} MB.
+                            Your current used storage size is {Math.round((this.state.usedStorageSize + Number.EPSILON) * 100) / 100} MB.
                         </Row>
                         <Row>
                             <Col>

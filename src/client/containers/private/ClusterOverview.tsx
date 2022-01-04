@@ -539,7 +539,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                                         {fileMetadata.ownedBy}
                                     </td>
                                     <td>
-                                        {fileMetadata.sizeOfFile_MB}
+                                        {Math.round((fileMetadata.sizeOfFile_MB + Number.EPSILON) * 100) / 100}
                                     </td>
                                     <td>
                                         <table>
