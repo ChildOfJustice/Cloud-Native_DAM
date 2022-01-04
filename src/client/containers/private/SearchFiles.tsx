@@ -208,7 +208,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
 
         for (let cluster of this.state.clusters){
             if(cluster.clusterId === this.state.chosenClusterId){
-                if(cluster.permissions === undefined) //your own cluster
+                if(cluster.permissions === undefined) //your own cluster //TODO wtf, its a security risk
                     break;
                 else if(cluster.permissions[1] !== "1"){
                     alert("You do not have permissions to add files to this cluster.")
@@ -244,7 +244,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
                 console.log(promiseJson)
             }
         }
-        alert("All chosen file have been added to the cluster.")
+        alert("All chosen files have been added to the cluster.")
 
     }
     handleDeleteChosenFilesFromCluster = async () => {
@@ -274,7 +274,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
             }
         }
 
-        alert("All chosen file have been removed from the cluster.")
+        alert("All chosen files have been removed from the cluster.")
     }
 
     handleAllChecked = (event: any) => {
