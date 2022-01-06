@@ -68,7 +68,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         userRole: 'NO_ROLE',
         queryToDB: '',
         dbResponse: '',
-        usedStorageSize: 0,
+        usedStorageSize: -1,
         loading: false,
         loadingMessage: ''
     }
@@ -384,6 +384,13 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         </div>
     );
 
+    renderUsedStorageSize = () => {
+        if(this.state.usedStorageSize < 0){
+            return "loading..."
+        }
+        return (Math.round((this.state.usedStorageSize + Number.EPSILON) * 100) / 100).toString() + " MB"
+    }
+
     render() {
         if(this.state.loading) {
             return (
@@ -418,7 +425,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
                             <Col>Your role is: "{this.state.userRole}".<br/></Col>
                         </Row>
                         <Row>
-                            Your current used storage size is {Math.round((this.state.usedStorageSize + Number.EPSILON) * 100) / 100} MB.
+                            Your current used storage size is {this.renderUsedStorageSize()}.
                         </Row>
                         <Row>
                             <Col>

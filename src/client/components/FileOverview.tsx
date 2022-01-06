@@ -46,7 +46,7 @@ export default class CheckBox extends React.Component<IProps, IState> {
                     {this.props.value.file.ownedBy}
                 </td>
                 <td>
-                    {this.props.value.file.sizeOfFile_MB}
+                    {Math.round(((+this.props.value.file.sizeOfFile_MB) + Number.EPSILON) * 100) / 100}
                 </td>
                 <table>
                     {this.props.value.file.tagsKeys.map((keyName, i) =>

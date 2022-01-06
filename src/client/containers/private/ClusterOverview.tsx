@@ -414,21 +414,25 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                     <Form.Control onChange={this._onChangeCoUserId} type="string" placeholder="User Name"/>
                     <Form.Label>Permissions for the user</Form.Label>
                     <Form.Check
+                        id={"downloadPermissionCheckBox"}
                         type={"checkbox"}
                         label={"Download"}
                         onChange={this.handleDownloadPermissionChange}
                     />
                     <Form.Check
+                        id={"uploadPermissionCheckBox"}
                         type={"checkbox"}
                         onChange={this.handleUploadPermissionChange}
                         label={"Upload"}
                     />
                     <Form.Check
+                        id={"deletePermissionCheckBox"}
                         type={"checkbox"}
                         onChange={this.handleDeletePermissionChange}
                         label={"Delete"}
                     />
                     <Form.Check
+                        id={"permissionControlPermissionCheckBox"}
                         type={"checkbox"}
                         onChange={this.handleCanGivePermissionsToOthersChange}
                         label={"Can give permissions to others"}
@@ -539,7 +543,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                                         {fileMetadata.ownedBy}
                                     </td>
                                     <td>
-                                        {Math.round((fileMetadata.sizeOfFile_MB + Number.EPSILON) * 100) / 100}
+                                        {Math.round(((+fileMetadata.sizeOfFile_MB) + Number.EPSILON) * 100) / 100}
                                     </td>
                                     <td>
                                         <table>

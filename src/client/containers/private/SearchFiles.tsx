@@ -326,7 +326,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
             </Button>
             <div>
                 <h1> Your files </h1>
-                <input type="checkbox" onChange={this.handleAllChecked} value="checkedall"/> Check / Uncheck All
+                <input id={"checkAll"} type="checkbox" onChange={this.handleAllChecked} value="checkedall"/> Check / Uncheck All
                 <Table striped bordered hover variant="dark">
                     <thead>
                     <tr>
