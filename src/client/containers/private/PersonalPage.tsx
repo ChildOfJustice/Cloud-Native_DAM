@@ -352,7 +352,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         makeFetch<string>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
-            this.setState({dbResponse: JSON.stringify(jsonRes[0])})
+            this.setState({dbResponse: JSON.stringify(jsonRes['response'])})
         }).catch(error => alert("ERROR: " + error))
     }
     //^
@@ -375,7 +375,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
         <div className="AdminPanel">
             {isAdmin ? <Form.Group controlId="adminPanel">
                 <Form.Label>Query to Database</Form.Label>
-                <Form.Control onChange={this._onChangeQuery} type="string" placeholder="Query"/>
+                <Form.Control as="textarea" onChange={this._onChangeQuery} type="string" placeholder="Query"/>
                 <Button onClick={this.makeAdminQuery} variant="primary">Make request</Button>
 
                 <Form.Label>Response</Form.Label>
