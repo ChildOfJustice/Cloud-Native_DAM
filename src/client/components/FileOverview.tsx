@@ -49,12 +49,14 @@ export default class CheckBox extends React.Component<IProps, IState> {
                     {Math.round(((+this.props.value.file.sizeOfFile_MB) + Number.EPSILON) * 100) / 100}
                 </td>
                 <table>
-                    {this.props.value.file.tagsKeys.map((keyName, i) =>
-                        (<tr>
-                            <td>{keyName}</td>
-                            <td>{this.props.value.file.tagsValues[i]}</td>
-                        </tr>)
-                    )}
+                    <tbody>
+                        {this.props.value.file.tagsKeys.map((keyName, i) =>
+                            (<tr>
+                                <td>{keyName}</td>
+                                <td>{this.props.value.file.tagsValues[i]}</td>
+                            </tr>)
+                        )}
+                    </tbody>
                 </table>
                 <td>
                     <Button
