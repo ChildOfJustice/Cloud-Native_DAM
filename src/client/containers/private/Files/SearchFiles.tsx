@@ -2,25 +2,26 @@ import * as React from "react";
 import Button from "react-bootstrap/Button";
 
 import {connect} from 'react-redux';
-import {IRootState} from '../../../store';
+import {IRootState} from '../../../../store';
 import {Dispatch} from 'redux';
-import * as storeService from '../../../store/demo/store.service'
-import {DemoActions} from '../../../store/demo/types';
+import * as storeService from '../../../../store/demo/store.service'
+import {DemoActions} from '../../../../store/demo/types';
 import {Table} from "react-bootstrap";
-import {Cluster, Permission} from "../../../interfaces/databaseTables";
-import {FileOverviewType} from "../../../interfaces/componentsTypes";
-import FileOverview from "../../components/FileOverview";
+import {Cluster, Permission} from "../../../../interfaces/databaseTables";
+import {FileOverviewType} from "../../../../interfaces/componentsTypes";
+import FileOverview from "../../../components/FileOverview";
+import SearchComponent from "../../../components/searchFileComponent/SearchComponent";
 import * as AWS from "aws-sdk";
-import config from "../../../config";
+import config from "../../../../config";
 import {History} from "history";
-import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
+import {FetchParams, makeFetch} from "../../../../interfaces/FetchInterface";
 import {
     downloadFile,
     getAllUserClusters,
     getAllUserFileOverviews,
     getAllUserFiles
-} from "../../../interfaces/componentsFunctions";
-import LoadingScreen from "../../components/LoadingScreen";
+} from "../../../../interfaces/componentsFunctions";
+import LoadingScreen from "../../../components/LoadingScreen";
 import {forEach} from "react-bootstrap/ElementChildren";
 
 const mapStateToProps = ({demo}: IRootState) => {
@@ -65,24 +66,24 @@ class SearchFiles extends React.Component<ReduxType, IState> {
 
     async componentDidMount() {
         this.setState({loading: true, loadingMessage: "Loading your files"})
-        try {
-            await this.props.loadStore()
-
-            const fetchParams: FetchParams = {
-                url: '/files',
-                token: this.props.authToken,
-                method: 'GET',
-
-                actionDescription: "get all user files"
-            }
-            let userFiles = await getAllUserFileOverviews(this.props.authToken, fetchParams)
-            this.setState({filesOverviews: userFiles})
-            const setState = this.setState.bind(this)
-            await getAllUserClusters(this.props, setState)
-            await this.getAllSharedClusters()
-        } catch (e) {
-            this.setState({loading: false, loadingMessage: ""})
-        }
+        // try {
+        //     await this.props.loadStore()
+        //
+        //     const fetchParams: FetchParams = {
+        //         url: '/files',
+        //         token: this.props.authToken,
+        //         method: 'GET',
+        //
+        //         actionDescription: "get all user files"
+        //     }
+        //     let userFiles = await getAllUserFileOverviews(this.props.authToken, fetchParams)
+        //     this.setState({filesOverviews: userFiles})
+        //     const setState = this.setState.bind(this)
+        //     await getAllUserClusters(this.props, setState)
+        //     await this.getAllSharedClusters()
+        // } catch (e) {
+        //     this.setState({loading: false, loadingMessage: ""})
+        // }
         this.setState({loading: false, loadingMessage: ""})
     }
 
@@ -302,9 +303,16 @@ class SearchFiles extends React.Component<ReduxType, IState> {
         this.setState({chosenClusterId: event.target.value});
     }
 
+    handleFoundFilesChanged = (changedFilesOverviews: FileOverviewType[]) => {
+        this.setState({filesOverviews: changedFilesOverviews})
+    }
+
     // @ts-ignore
     MainComponent = ({counter}) => (
         <div className="MainComponent">
+
+            <SearchComponent handleFoundFilesChanged={this.handleFoundFilesChanged}/>
+
             <form>
                 <label>
                     Choose a cluster to add/remove files from:
