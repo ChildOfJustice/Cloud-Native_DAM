@@ -5,6 +5,7 @@
   "scripts": {
     "build": "rm -rf ./build/* && webpack --config webpack.config.js",
     "deploy": "sh ./utils/Deployment/fullDeploy.sh",
+    "remove": "sh ./utils/deleteResources.sh",
     "start-webpack": "webpack && webpack-dev-server --mode development",
     "serve": "serve -s build",
     "build-ts": "rm -rf ./build/* && react-scripts build",
