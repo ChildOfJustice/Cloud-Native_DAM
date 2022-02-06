@@ -352,6 +352,7 @@ class PersonalPage extends React.Component<ReduxType, IState> {
 
         makeFetch<string>(fetchParams).then(jsonRes => {
             console.log(jsonRes)
+            // @ts-ignore
             this.setState({dbResponse: JSON.stringify(jsonRes['response'])})
         }).catch(error => alert("ERROR: " + error))
     }
