@@ -10,7 +10,6 @@ import * as storeService from '../../../store/demo/store.service'
 import {DemoActions} from '../../../store/demo/types';
 import {Col, Row, Table} from "react-bootstrap";
 import {LinkContainer} from "react-router-bootstrap";
-import Navbar from "react-bootstrap/Navbar";
 import {FileMetadata, Permission} from "../../../interfaces/databaseTables";
 import * as AWS from "aws-sdk";
 import config from "../../../config";
@@ -19,6 +18,8 @@ import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 import {downloadFile, getAllUserFiles} from "../../../interfaces/componentsFunctions";
 import LoadingScreen from "../../components/LoadingScreen";
 import Container from "react-bootstrap/Container";
+import FileOverview from "../../components/FileOverview";
+import {FileOverviewType} from "../../../interfaces/componentsTypes";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;
@@ -247,7 +248,7 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
         }).catch(error => alert("ERROR: " + error))
 
     }
-    deleteFile = async (S3uniqueName: string, fileId?: number) => {
+    deleteFile = async (sender: any, S3uniqueName: string, fileId?: number) => {
         if (this.state.permissions[2] !== '1') {
             alert("You don't have permissions to delete any files!")
             return
@@ -512,57 +513,31 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
                         <thead>
                         <tr>
                             <th>#</th>
-                            <th>File Name</th>
-                            <th>Cloud provider</th>
-                            <th>File owner</th>
-                            <th>Uploaded by</th>
-                            <th>File size (MBs)</th>
+                            <th>Name</th>
+                            <th>Cloud</th>
+                            <th>UploadedBy</th>
+                            <th>OwnedBy</th>
+                            <th>SizeOfFile_MB</th>
                             <th>Metadata</th>
                             <th>Delete</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {this.state.files.map(
-                            (fileMetadata: FileMetadata) =>
-                                <tr>
-                                    <td key={clusterCounter}>
-                                        {clusterCounter++}
-                                    </td>
-                                    <td>
-                                        <Button
-                                            onClick={() => downloadFile(fileMetadata.S3uniqueName, fileMetadata.cloud, fileMetadata.name)}
-                                            variant="link">{fileMetadata.name}</Button>
-                                    </td>
-                                    <td>
-                                        {fileMetadata.cloud}
-                                    </td>
-                                    <td>
-                                        {fileMetadata.uploadedBy}
-                                    </td>
-                                    <td>
-                                        {fileMetadata.ownedBy}
-                                    </td>
-                                    <td>
-                                        {Math.round(((+fileMetadata.sizeOfFile_MB) + Number.EPSILON) * 100) / 100}
-                                    </td>
-                                    <td>
-                                        <table>
-                                            {fileMetadata.tagsKeys.map((keyName, i) =>
-                                                (<tr>
-                                                    <td>{keyName}</td>
-                                                    <td>{fileMetadata.tagsValues[i]}</td>
-                                                </tr>)
-                                            )}
-                                        </table>
-                                    </td>
-                                    <td>
-                                        <Button
-                                            onClick={() => this.deleteFile(fileMetadata.S3uniqueName, fileMetadata.id)}
-                                            variant="danger">X</Button>
-                                    </td>
-                                </tr>
-                        )}
+                        {
+                            this.state.files.map((fileMetadata, index) => {
+                                let fileOverview: FileOverviewType = {
+                                    id: index,
+                                    isChecked: false,
+                                    file: fileMetadata
+                                }
+                                return (
+                                    <FileOverview key={index} parent={this}
+                                                  handleDownloadFile={downloadFile} handleDeleteFile={this.deleteFile}
+                                                  value={fileOverview}/>
 
+                                )
+                            })
+                        }
                         </tbody>
                     </Table>
 

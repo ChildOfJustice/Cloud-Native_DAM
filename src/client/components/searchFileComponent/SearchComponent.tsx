@@ -4,8 +4,6 @@ import {TagInterface} from "./tagInterface";
 import Form from "react-bootstrap/Form";
 import {Col, Row} from "react-bootstrap";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
-import {getAllUserClusters} from "../../../interfaces/componentsFunctions";
-import config from "../../../config";
 import {FileMetadata} from "../../../interfaces/databaseTables";
 import {FileOverviewType} from "../../../interfaces/componentsTypes";
 
@@ -17,11 +15,12 @@ interface IState {
 
 interface IProps {
     handleFoundFilesChanged: (changedFilesOverviews: FileOverviewType[]) => void
+    authToken: string
 }
 
 export default class SearchComponent extends React.Component<IProps, IState> {
 
-    private fileNameTagInDatabase = "FILENAME"
+    private fileNameTagInDatabase = "Name"
 
     public state: IState = {
         fileNameToSearch: "",
@@ -38,8 +37,6 @@ export default class SearchComponent extends React.Component<IProps, IState> {
     _handleSubmit = (event: any) => {
         event.preventDefault();
 
-        //console.log(JSON.stringify(this.state.metadataTags))
-
         // const bodyMatchAllTagsWithOneValue = {
         //     "query": {
         //         "multi_match": {
@@ -50,9 +47,9 @@ export default class SearchComponent extends React.Component<IProps, IState> {
         // }
 
         let tagMetadataToDsl: { match: { [x: string]: string; } }[] = []
-        this.state.metadataTags.forEach( tagInterface => {
-            if (tagInterface.tagName != ""){
-                if(tagInterface.tagValue == ""){
+        this.state.metadataTags.forEach(tagInterface => {
+            if (tagInterface.tagName != "") {
+                if (tagInterface.tagValue == "") {
                     console.log("Tag value is empty - will check for files with specified field")
                 } else {
                     let queryWithTermCondition = {
@@ -67,23 +64,33 @@ export default class SearchComponent extends React.Component<IProps, IState> {
             }
         })
 
-        this._addFileNameSearchOption(tagMetadataToDsl)
+        let findByFileNameRelevance = this._addFileNameSearchOption()
 
-        if(tagMetadataToDsl.length == 0)
-            return
+        let openSearchQueryBody: any
 
-        const bodyToLookForSeveralTagFields = {
-            "query": {
-                "bool": {
-                    "must": tagMetadataToDsl,
-                    // "must": [
-                    //     """tag": "Tag2Value"
-                    // ]
-                    // "must_not": {
-                    //     "term": {
-                    //         "field2": "Y"
-                    //     }
-                    // }
+        if (tagMetadataToDsl.length == 0 && findByFileNameRelevance.length == 0) {
+            //look for all records
+            openSearchQueryBody = {
+                "query": {
+                    "match_all": {}
+                }
+            }
+        }
+        else {
+            openSearchQueryBody = {
+                "query": {
+                    "bool": {
+                        "must": tagMetadataToDsl,
+                        "should": findByFileNameRelevance,
+                        // "must": [
+                        //     """tag": "Tag2Value"
+                        // ]
+                        // "must_not": {
+                        //     "term": {
+                        //         "field2": "Y"
+                        //     }
+                        // }
+                    }
                 }
             }
         }
@@ -97,81 +104,86 @@ export default class SearchComponent extends React.Component<IProps, IState> {
         //     }
         // }
 
-        fetch("https://search-opensearchservi-hjx8ij9v5xyo-xcecqow3dlqo6ahyrz42eefv4q.eu-central-1.es.amazonaws.com/lambda-index/_search", {
+        const {authToken} = this.props;
+
+        const fetchParams: FetchParams = {
+            url: '/files/search',
+            token: authToken,
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(bodyToLookForSeveralTagFields)
-        }).then(res => {
-                res.json().then( jsonResponse => {
-                    console.log("GOT THE RESPONSE FROM OpenSearch:")
-                    console.log(jsonResponse)
-                    //THIS PART IS ONLY FOR TESTING, we will have a lambda with this
-                    let foundDataArray = jsonResponse.hits.hits
-                    //
+            body: openSearchQueryBody,
 
-                    let foundFiles: FileMetadata[] = []
-                    foundDataArray.forEach( (foundItem: any) => {
+            actionDescription: "post opensearch request"
+        }
 
-                        let file: FileMetadata = {
-                            name: foundItem._source.ID,
-                            S3uniqueName: foundItem._source.SK,
-                            cloud: "AWS",
-                            uploadedBy: "string",
-                            ownedBy: "string",
-                            sizeOfFile_MB: 1,
-                            tagsKeys: [],
-                            tagsValues: [],
+        makeFetch<any>(fetchParams)
+            .then(jsonResponse => {
+
+                console.log("GOT THE RESPONSE FROM OpenSearch:")
+                console.log(jsonResponse)
+                //THIS PART IS ONLY FOR TESTING, we will have a lambda with this
+                //let foundDataArray = jsonResponse.hits.hits
+                //
+
+                let foundFiles: FileMetadata[] = []
+                jsonResponse.forEach( (foundItem: any) => {
+
+                    let file: FileMetadata = {
+                        name: foundItem._source.Name,
+                        S3uniqueName: foundItem._source.S3uniqueName,
+                        cloud: foundItem._source.Cloud,
+                        uploadedBy: foundItem._source.UploadedBy,
+                        ownedBy: foundItem._source.OwnedBy,
+                        sizeOfFile_MB: foundItem._source.SizeOfFile_MB,
+                        tagsKeys: [],
+                        tagsValues: [],
+                    }
+
+                    let allTagKeys: string[] = []
+                    let allTagValues: string[] = []
+
+                    //TODO: this is AWFUL
+                    const mainFileInfoFields = { Name: 1, S3uniqueName: 2, Cloud: 3, UploadedBy: 4, OwnedBy: 5, SK: 6, ID: 7, Data: 8, SizeOfFile_MB: 9};
+
+                    for (const property in foundItem._source) {
+                        if(!(property in mainFileInfoFields)){
+                            //if this property is not from fileInterface - its a tag
+                            allTagKeys.push(property)
+                            allTagValues.push(foundItem._source[property])
                         }
+                    }
 
-                        let allTagKeys: string[] = []
-                        let allTagValues: string[] = []
+                    file.tagsKeys = allTagKeys
+                    file.tagsValues = allTagValues
 
-                        //TODO: this is AWFUL
-                        const mainFileInfoFields = { name: 1, S3uniqueName: 2, cloud: 3, uploadedBy: 4, ownedBy: 5, SK: 6, ID: 7};
-
-                        for (const property in foundItem._source) {
-                            if(!(property in mainFileInfoFields)){
-                                //if this property is not from fileInterface - its a tag
-                                allTagKeys.push(property)
-                                allTagValues.push(foundItem._source[property])
-                            }
-                        }
-
-                        file.tagsKeys = allTagKeys
-                        file.tagsValues = allTagValues
-
-                        foundFiles.push(file)
-                    })
-
-                    let newFilesOverview: FileOverviewType[] = foundFiles.map((item: any, i: number) => {
-                        return {
-                            id: i,
-                            isChecked: false,
-                            file: item
-                        }
-                    })
-
-                    this.props.handleFoundFilesChanged(newFilesOverview)
-
-                    console.log(foundDataArray)
+                    foundFiles.push(file)
                 })
+
+                let newFilesOverview: FileOverviewType[] = foundFiles.map((item: any, i: number) => {
+                    return {
+                        id: i,
+                        isChecked: false,
+                        file: item
+                    }
+                })
+
+                this.props.handleFoundFilesChanged(newFilesOverview)
             }
         ).catch(error => {
             console.log("Error for opensearch fetch: " + error)
         })
     }
 
-    _addFileNameSearchOption(tagMetadataToDsl: { match: { [x: string]: string; } }[]){
+    _addFileNameSearchOption(): { match: { [x: string]: string; }; }[] {
+        let res = []
         if(this.state.fileNameToSearch != ""){
             let queryWithTermCondition = {
                 "match": {
                     [this.fileNameTagInDatabase]: this.state.fileNameToSearch
                 }
             }
-            tagMetadataToDsl.push(queryWithTermCondition)
+            res.push(queryWithTermCondition)
         }
+        return res
     }
 
 

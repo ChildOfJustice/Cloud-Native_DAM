@@ -22,7 +22,6 @@ import {
     getAllUserFiles
 } from "../../../../interfaces/componentsFunctions";
 import LoadingScreen from "../../../components/LoadingScreen";
-import {forEach} from "react-bootstrap/ElementChildren";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;
@@ -66,24 +65,24 @@ class SearchFiles extends React.Component<ReduxType, IState> {
 
     async componentDidMount() {
         this.setState({loading: true, loadingMessage: "Loading your files"})
-        // try {
-        //     await this.props.loadStore()
-        //
-        //     const fetchParams: FetchParams = {
-        //         url: '/files',
-        //         token: this.props.authToken,
-        //         method: 'GET',
-        //
-        //         actionDescription: "get all user files"
-        //     }
-        //     let userFiles = await getAllUserFileOverviews(this.props.authToken, fetchParams)
-        //     this.setState({filesOverviews: userFiles})
-        //     const setState = this.setState.bind(this)
-        //     await getAllUserClusters(this.props, setState)
-        //     await this.getAllSharedClusters()
-        // } catch (e) {
-        //     this.setState({loading: false, loadingMessage: ""})
-        // }
+        try {
+            await this.props.loadStore()
+
+            const fetchParams: FetchParams = {
+                url: '/files',
+                token: this.props.authToken,
+                method: 'GET',
+
+                actionDescription: "get all user files"
+            }
+            let userFiles = await getAllUserFileOverviews(this.props.authToken, fetchParams)
+            this.setState({filesOverviews: userFiles})
+            const setState = this.setState.bind(this)
+            await getAllUserClusters(this.props, setState)
+            await this.getAllSharedClusters()
+        } catch (e) {
+            this.setState({loading: false, loadingMessage: ""})
+        }
         this.setState({loading: false, loadingMessage: ""})
     }
 
@@ -311,7 +310,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
     MainComponent = ({counter}) => (
         <div className="MainComponent">
 
-            <SearchComponent handleFoundFilesChanged={this.handleFoundFilesChanged}/>
+            <SearchComponent authToken={this.props.authToken} handleFoundFilesChanged={this.handleFoundFilesChanged}/>
 
             <form>
                 <label>
@@ -340,11 +339,11 @@ class SearchFiles extends React.Component<ReduxType, IState> {
                     <tr>
                         <th>#</th>
                         <th>Chosen</th>
-                        <th>File Name</th>
-                        <th>Cloud provider</th>
-                        <th>File owner</th>
-                        <th>Uploaded by</th>
-                        <th>File size (MBs)</th>
+                        <th>Name</th>
+                        <th>Cloud</th>
+                        <th>UploadedBy</th>
+                        <th>OwnedBy</th>
+                        <th>SizeOfFile_MB</th>
                         <th>Metadata</th>
                         <th>Delete</th>
                     </tr>

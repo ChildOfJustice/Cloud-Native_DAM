@@ -11,6 +11,13 @@ Parameters:
   CognitoDomain:
     Type: String
     Default: amplifytestappdomain
+  DynamoDbTableName:
+    Type: String
+    Default: CloudNativeDAM_DB
+  FilesSearchFunctionName:
+    Type: String
+    Default: OpenSearchFunction
+
 
 Resources:
   #----------------------------------IAM-----------------------------------
@@ -39,31 +46,8 @@ Resources:
     Type: AWS::IAM::AccessKey
     Properties: 
       UserName: !Ref ProgrammaticUserForS3
-  #----------------------------------Amplify-----------------------------------
-  # Type: AWS::Amplify::App
-  # Properties:
-  #   Name: amplifytestapp
-  #   OauthToken: String
-  #   Repository: String
-  #   Tags:
-  #     - Tag
-  # Type: AWS::Amplify::Branch
-  # Properties:
-  #   AppId: String
-  #   BasicAuthConfig:
-  #     BasicAuthConfig
-  #   BranchName: String
-  #   BuildSpec: String
-  #   Description: String
-  #   EnableAutoBuild: Boolean
-  #   EnablePerformanceMode: Boolean
-  #   EnablePullRequestPreview: Boolean
-  #   EnvironmentVariables:
-  #     - EnvironmentVariable
-  #   PullRequestEnvironmentName: String
-  #   Stage: String
-  #   Tags:
-  #     - Tag
+
+
   #----------------------------------API-----------------------------------
   MyAPI:
     Type: AWS::ApiGatewayV2::Api
@@ -79,16 +63,8 @@ Resources:
           - '*'
         AllowOrigins:
           - !Sub https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com
-  #-----------------INTEGRATIONS
-  TestIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref MyAPI
-      IntegrationMethod: 'POST'
-      IntegrationType: 'AWS_PROXY'
-      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MyLambdaFunction.Arn}/invocations
-      PayloadFormatVersion: '2.0'
-  #////////Users
+  ##INTEGRATIONS
+  ###Users
   UsersIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -105,7 +81,7 @@ Resources:
       IntegrationType: 'AWS_PROXY'
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersDeleteLambdaFunction.Arn}/invocations
       PayloadFormatVersion: '2.0'
-  #////////Clusters
+  ###Clusters
   ClustersIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -122,7 +98,7 @@ Resources:
       IntegrationType: 'AWS_PROXY'
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClustersDeleteLambdaFunction.Arn}/invocations
       PayloadFormatVersion: '2.0'
-  #////////Files
+  ###Files
   FilesIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -131,7 +107,15 @@ Resources:
       IntegrationType: 'AWS_PROXY'
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FilesLambdaFunction.Arn}/invocations
       PayloadFormatVersion: '2.0'
-  #////////Permissions
+  SearchFilesIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MyAPI
+      IntegrationMethod: 'POST'
+      IntegrationType: 'AWS_PROXY'
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OpenSearchApiFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+  ###Permissions
   PermissionsIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -140,8 +124,7 @@ Resources:
       IntegrationType: 'AWS_PROXY'
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PermissionsLambdaFunction.Arn}/invocations
       PayloadFormatVersion: '2.0'
-
-  #////////Admin
+  ###Admin
   AdminIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -150,21 +133,9 @@ Resources:
       IntegrationType: 'AWS_PROXY'
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminLambdaFunction.Arn}/invocations
       PayloadFormatVersion: '2.0'
-  #-----------------ROUTES
-  TestPOSTRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref MyAPI
-      AuthorizationType: JWT
-      AuthorizerId: !Ref JWTAuthorizer
-      OperationName: 'test-op'
-      RouteKey: 'GET /test'
-      Target: !Join
-        - /
-        - - integrations
-          - !Ref TestIntegration
 
-  #////////Users
+  ##ROUTES
+  ###Users
   UsersRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -190,8 +161,7 @@ Resources:
         - /
         - - integrations
           - !Ref UsersDeleteIntegration
-
-  #////////Clusters
+  ###Clusters
   ClustersPostRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -244,8 +214,7 @@ Resources:
         - /
         - - integrations
           - !Ref ClustersDeleteIntegration
-
-  #////////Files
+  ###Files
   FilesGetProxyRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -295,8 +264,19 @@ Resources:
         - /
         - - integrations
           - !Ref FilesIntegration
-
-  #////////Permissions
+  FilesSearchRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      OperationName: 'files-search'
+      RouteKey: 'POST /files/search'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref SearchFilesIntegration
+  ###Permissions
   PermissionsPostRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -345,8 +325,7 @@ Resources:
         - /
         - - integrations
           - !Ref PermissionsIntegration
-
-  #////////Admin
+  ###Admin
   AdminPostRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -359,6 +338,7 @@ Resources:
         - /
         - - integrations
           - !Ref AdminIntegration
+
   #-----------------API GATEWAY DEPLOYMENT
   TestDeployment:
     Type: AWS::ApiGatewayV2::Deployment
@@ -368,7 +348,6 @@ Resources:
       StageName: '$default'
     DependsOn:
       - TestStage
-      - TestPOSTRoute
       - UsersRoute
   TestStage:
     Type: AWS::ApiGatewayV2::Stage
@@ -399,7 +378,10 @@ Resources:
         Issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
       Name: test-jwt-authorizer
 
+
   #----------------------------------BACKEND-----------------------------------
+
+  #-----------------S3
   StorageBucket:
     Type: AWS::S3::Bucket
     Properties: 
@@ -417,11 +399,12 @@ Resources:
               - HEAD
             AllowedHeaders: 
               - "*"
-  #-----------------API GATEWAY DEPLOYMENT
+
+  #-----------------DynamoDB
   DynamoDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: "CloudNativeDAM_DB"
+      TableName: !Ref DynamoDbTableName
       AttributeDefinitions:
         -
           AttributeName: "ID"
@@ -471,15 +454,10 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: "1"
             WriteCapacityUnits: "1"
+      StreamSpecification:
+        StreamViewType: "NEW_IMAGE"
 
   #-----------------LAMBDA FUNCTIONS
-  MyLambdaFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Runtime: python3.8
-      Role: !GetAtt FunctionExecutionRole.Arn
-      Handler: MyLambdaFunction.handler
-      CodeUri: ../Serverless/Lambdas/MyLambdaFunction.py
   UsersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -494,6 +472,7 @@ Resources:
       Role: !GetAtt FunctionExecutionRole.Arn
       Handler: UsersDeleteHandler.handler
       CodeUri: ../Serverless/Lambdas/UsersDeleteHandler.py
+
   ClustersLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -508,6 +487,7 @@ Resources:
       Role: !GetAtt FunctionExecutionRole.Arn
       Handler: ClustersDeleteHandler.handler
       CodeUri: ../Serverless/Lambdas/ClustersDeleteHandler.py
+
   FilesLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -515,6 +495,7 @@ Resources:
       Role: !GetAtt FunctionExecutionRole.Arn
       Handler: FilesHandler.handler
       CodeUri: ../Serverless/Lambdas/FilesHandler.py
+
   PermissionsLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -522,6 +503,7 @@ Resources:
       Role: !GetAtt FunctionExecutionRole.Arn
       Handler: PermissionsHandler.handler
       CodeUri: ../Serverless/Lambdas/PermissionsHandler.py
+
   AdminLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -530,14 +512,93 @@ Resources:
       Handler: AdminHandler.handler
       CodeUri: ../Serverless/Lambdas/AdminHandler.py
 
-  #--------------------------------Roles-----------------------------------
-  APIInvokeTestLambdaPermission:
-    Type: AWS::Lambda::Permission
+  ##SEARCH FUNCTIONS
+  DynamoDbStreamsProcessor:
+    Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Ref MyLambdaFunction
-      Action: lambda:InvokeFunction
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+      Runtime: python3.8
+      Role: !GetAtt DynamoDbStreamsProcessorExecutionRole.Arn
+      Handler: DynamodDbToOpenSearch.handler
+      CodeUri: ../Serverless/Lambdas/Search/DynamodDbToOpenSearch.py
+      Layers:
+        - !Ref OpenSearchLayer
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref OpenSearchSecurityGroup
+        SubnetIds:
+          - !Ref OpenSearchLambdaSubnet1
+          - !Ref OpenSearchLambdaSubnet2
+      Environment:
+        Variables:
+          openSearchServiceDomain: !GetAtt OpenSearchService.DomainEndpoint
+
+  OpenSearchApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref FilesSearchFunctionName
+      Runtime: python3.8
+      Role: !GetAtt OpenSearchApiExecutionRole.Arn
+      Handler: OpenSearchApiFunction.handler
+      CodeUri: ../Serverless/Lambdas/Search/OpenSearchApiFunction.py
+      Layers:
+        - !Ref OpenSearchLayer
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref OpenSearchSecurityGroup
+        SubnetIds:
+          - !Ref OpenSearchLambdaSubnet1
+          - !Ref OpenSearchLambdaSubnet2
+      Environment:
+        Variables:
+          openSearchServiceDomain: !GetAtt OpenSearchService.DomainEndpoint
+
+  OpenSearchLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: open-search-layer
+      Description: requests and aws signing libs
+      ContentUri: ../Serverless/Lambdas/Search/openSearchLayer.zip
+
+  DynamoDbStreamTrigger:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 1 #100
+      EventSourceArn: !GetAtt DynamoDBTable.StreamArn
+      FunctionName: !GetAtt DynamoDbStreamsProcessor.Arn
+      StartingPosition: "TRIM_HORIZON"
+
+  #--------------------------------VPC-----------------------------------
+  OpenSearchVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  OpenSearchSecurityGroup:
+    #TODO: add inbound rules!!!
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: VPC SG
+      GroupDescription: VPC Security Group
+      VpcId: !Ref OpenSearchVPC
+
+  OpenSearchLambdaSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref OpenSearchVPC
+      CidrBlock: 10.0.32.0/20
+  OpenSearchLambdaSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref OpenSearchVPC
+      CidrBlock: 10.0.16.0/20
+
+
+
+
+  #--------------------------------Roles-----------------------------------
+  ##INVOKE PERMISSIONS
   APIInvokeUsersLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -552,6 +613,7 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+
   APIInvokeClustersLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -566,6 +628,7 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+
   APIInvokeFilesLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -573,6 +636,14 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+  APIInvokeSearchFilesLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref OpenSearchApiFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+
   APIInvokePermissionsLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -580,6 +651,7 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
+
   APIInvokeAdminLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -588,7 +660,7 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/*
 
-
+  ##POLICIES
   LambdaDynamoDBWritePolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -604,8 +676,8 @@ Resources:
               - dynamodb:DescribeTable
               - dynamodb:Query
             Resource:
-              - arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB
-              - arn:aws:dynamodb:eu-central-1:204713165914:table/CloudNativeDAM_DB/index/*
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDbTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDbTableName}/index/*
 
   FunctionExecutionRole:
     Type: AWS::IAM::Role
@@ -623,6 +695,123 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
         - !Ref LambdaDynamoDBWritePolicy
+
+  ### Search Permissions
+  DynamoDbStreamsProcessorPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - es:ESHttpPost
+              - es:ESHttpPut
+              - ec2:DescribeNetworkInterfaces
+              - ec2:CreateNetworkInterface
+              - ec2:DeleteNetworkInterface
+              - ec2:DescribeInstances
+              - ec2:AttachNetworkInterface
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:ListStreams
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - '*'
+
+  DynamoDbStreamsProcessorExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Ref DynamoDbStreamsProcessorPolicy
+
+  LambdaOpenSearchPolicyApi:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - es:ESHttpPost
+              - es:ESHttpGet
+              - ec2:DescribeNetworkInterfaces
+              - ec2:CreateNetworkInterface
+              - ec2:DeleteNetworkInterface
+              - ec2:DescribeInstances
+              - ec2:AttachNetworkInterface
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - '*'
+
+  OpenSearchApiExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Ref LambdaOpenSearchPolicyApi
+
+
+  #--------------------------------Open Search-----------------------------------
+  OpenSearchService:
+    Type: AWS::OpenSearchService::Domain
+    Properties:
+#      AccessPolicies:
+#        Version: '2012-10-17'
+#        Statement:
+#          - Effect: 'Allow'
+#            Principal:
+#              AWS:
+##                - !GetAtt OpenSearchApiFunction.Arn
+#                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${FilesSearchFunctionName}'
+#            Action: 'es:*'
+##            Condition:
+##              IpAddress:
+##                "aws:SourceIp": "<user IP for test purposes>/32"
+      ClusterConfig:
+        InstanceCount: 1
+        InstanceType: t2.small.search
+        ZoneAwarenessEnabled: false
+      EBSOptions:
+        EBSEnabled: true
+        VolumeType: "standard"
+        VolumeSize: 10
+      VPCOptions:
+        SecurityGroupIds:
+          - !Ref OpenSearchSecurityGroup
+        SubnetIds:
+          - !Ref OpenSearchLambdaSubnet1
+    DependsOn:
+      - OpenSearchServiceLinkedRoleForVpc
+
+  OpenSearchServiceLinkedRoleForVpc:
+    Type: 'AWS::IAM::ServiceLinkedRole'
+    Properties:
+      AWSServiceName: es.amazonaws.com
+      Description: 'Role for ES to access resources in my VPC'
+
   #--------------------------------Cognito---------------------------------
   UserPool:
     Type: AWS::Cognito::UserPool
@@ -712,6 +901,9 @@ Resources:
   #       Tags:
   #         - Key: Module
   #           Value: SardorTestDAM
+
+
+
 Outputs:
   SignupURL:
     Value: !Sub https://${HostedUI}.auth.${AWS::Region}.amazoncognito.com/login?client_id=${AppClient}&response_type=token&scope=email+profile+aws.cognito.signin.user.admin&redirect_uri=https://dev.${AmplifyFrontendApp.AppId}.amplifyapp.com/private/area
