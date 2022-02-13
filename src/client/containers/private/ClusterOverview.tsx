@@ -263,6 +263,10 @@ class ClusterOverview extends React.Component<ReduxType, IState> {
 
         let deletePermanently = prompt('Type "delete" to permanently delete the file or leave it blank to just unlink this file from the current cluster.', '');
 
+        if (deletePermanently === null) {
+            return
+        }
+
         if (deletePermanently === 'delete') {
 
             // this.deleteFilePermanently(fileId)
