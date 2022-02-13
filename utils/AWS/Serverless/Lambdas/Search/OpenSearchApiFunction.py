@@ -18,6 +18,7 @@ headers = { "Content-Type": "application/json" }
 
 def handler(event, context):
     body_object = json.loads(event.get('body'))
+    requester_cognito_user_id = event.get('requestContext').get('authorizer').get('jwt').get('claims').get('sub')
 
     print("request body: " + event.get('body'))
     response = requests.post(search_url, auth=awsauth, data=json.dumps(body_object), headers=headers)
@@ -29,10 +30,13 @@ def handler(event, context):
             found_data = response_object.get("hits").get("hits") # "hits" array
             print("DATA:")
             print(str(found_data))
+            filtered_data = [x for x in found_data if thisUserIsOwner(x, requester_cognito_user_id)]
+            print("filter:")
+            print(str(filtered_data))
 
             response = {
                 'statusCode': 200,
-                'body': json.dumps(found_data),
+                'body': json.dumps(filtered_data),
             }
             return response
         else:
@@ -51,6 +55,10 @@ def handler(event, context):
         }
         return response
 
+def thisUserIsOwner(item, requester_cognito_user_id):
+    print("data attr: " + str(item.get("_source").get("Data")))
+    print("cog: " + requester_cognito_user_id)
+    return item.get("_source").get("Data") == requester_cognito_user_id
 # TEST event:
 # {
 #   "body": {
