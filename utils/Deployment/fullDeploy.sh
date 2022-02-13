@@ -1,6 +1,6 @@
 #!/bin/bash
 
-S3BucketName="sardor-test-code"
+ServerlessCodeStorageBucketName="sardor-test-code"
 S3StorageBucketName="sardor-app-storage"
 AwsRegion="eu-central-1"
 StackName="TestStack"
@@ -8,7 +8,7 @@ ProjectName="amplifytestapp"
 
 echo "STEP 1 #### Packaging CloudFormation template..." &&
 cd utils/AWS/CF &&
-sh packageTemplate.sh $S3BucketName &&
+sh packageTemplate.sh $ServerlessCodeStorageBucketName &&
 
 
 echo "STEP 2 #### Deploying CloudFormation stack..." &&
