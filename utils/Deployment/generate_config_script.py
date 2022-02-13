@@ -4,7 +4,7 @@ import json
 import subprocess
 
 # CONFIGURATION:
-maxUserStorageSize_MB = '2.0'
+maxUserStorageSize_MB = '2000.0' #!!!!! TODO: configure it to a proper value
 aws_region = sys.argv[1]
 bucket_name = sys.argv[2]
 bucket_region = aws_region
