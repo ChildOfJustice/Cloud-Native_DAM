@@ -21,18 +21,20 @@ def handler(event, context):
     count = 0
     print(str(event))
     for record in event['Records']:
-        # Get the primary key for use as the OpenSearch ID
         id = record['dynamodb']['Keys']['ID']['S']
         sk = record['dynamodb']['Keys']['SK']['S']
         print("id sk: " + str(id) + " | " + str(sk))
 
         if(id.startswith('FILE#') and sk.startswith('FILE#')):
-
+            url_encoded_id = urllib.parse.quote(id, safe='')
 
             print(str(record))
 
             if record['eventName'] == 'REMOVE':
-                r = requests.delete(url + id, auth=awsauth)
+                r = requests.delete(url + url_encoded_id, auth=awsauth)
+                print('Response: ' + str(r.content) + '\n')
+                # print(r.raise_for_status())
+                count += 1
             else:
 
                 document = record['dynamodb']['NewImage']
@@ -48,17 +50,14 @@ def handler(event, context):
                 # serializer = boto3.dynamodb.types.TypeSerializer()
                 # low_level_copy = {k: serializer.serialize(v) for k,v in python_data.items()}
 
-                # assert low_level_data == low_level_copy
-
                 print('Adding a new item from NewImage: ' + json.dumps(python_data, default=str) + '\n')
 
-                url_encoded_id = urllib.parse.quote(id, safe='')
+
                 r = requests.put(url + url_encoded_id, auth=awsauth, data=json.dumps(python_data, default=str), headers=headers)
                 print('Response: ' + str(r.content) + '\n')
-                print(r.raise_for_status())
+                # print(r.raise_for_status())
+                count += 1
 
-
-            count += 1
         else:
             print("This is not a file, will not add it to the OpenSearch index")
 
