@@ -2,26 +2,26 @@ import * as React from "react";
 import Button from "react-bootstrap/Button";
 
 import {connect} from 'react-redux';
-import {IRootState} from '../../../store';
+import {IRootState} from '../../../../store';
 import {Dispatch} from 'redux';
-import * as storeService from '../../../store/demo/store.service'
-import {DemoActions} from '../../../store/demo/types';
+import * as storeService from '../../../../store/demo/store.service'
+import {DemoActions} from '../../../../store/demo/types';
 import {Table} from "react-bootstrap";
-import {Cluster, Permission} from "../../../interfaces/databaseTables";
-import {FileOverviewType} from "../../../interfaces/componentsTypes";
-import FileOverview from "../../components/FileOverview";
+import {Cluster, Permission} from "../../../../interfaces/databaseTables";
+import {FileOverviewType} from "../../../../interfaces/componentsTypes";
+import FileOverview from "../../../components/FileOverview";
+import SearchComponent from "../../../components/searchFileComponent/SearchComponent";
 import * as AWS from "aws-sdk";
-import config from "../../../config";
+import config from "../../../../config";
 import {History} from "history";
-import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
+import {FetchParams, makeFetch} from "../../../../interfaces/FetchInterface";
 import {
     downloadFile,
     getAllUserClusters,
     getAllUserFileOverviews,
     getAllUserFiles
-} from "../../../interfaces/componentsFunctions";
-import LoadingScreen from "../../components/LoadingScreen";
-import {forEach} from "react-bootstrap/ElementChildren";
+} from "../../../../interfaces/componentsFunctions";
+import LoadingScreen from "../../../components/LoadingScreen";
 
 const mapStateToProps = ({demo}: IRootState) => {
     const {authToken, idToken, loading} = demo;
@@ -208,7 +208,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
 
         for (let cluster of this.state.clusters){
             if(cluster.clusterId === this.state.chosenClusterId){
-                if(cluster.permissions === undefined) //your own cluster
+                if(cluster.permissions === undefined) //your own cluster //TODO wtf, its a security risk
                     break;
                 else if(cluster.permissions[1] !== "1"){
                     alert("You do not have permissions to add files to this cluster.")
@@ -244,7 +244,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
                 console.log(promiseJson)
             }
         }
-        alert("All chosen file have been added to the cluster.")
+        alert("All chosen files have been added to the cluster.")
 
     }
     handleDeleteChosenFilesFromCluster = async () => {
@@ -274,7 +274,7 @@ class SearchFiles extends React.Component<ReduxType, IState> {
             }
         }
 
-        alert("All chosen file have been removed from the cluster.")
+        alert("All chosen files have been removed from the cluster.")
     }
 
     handleAllChecked = (event: any) => {
@@ -302,9 +302,16 @@ class SearchFiles extends React.Component<ReduxType, IState> {
         this.setState({chosenClusterId: event.target.value});
     }
 
+    handleFoundFilesChanged = (changedFilesOverviews: FileOverviewType[]) => {
+        this.setState({filesOverviews: changedFilesOverviews})
+    }
+
     // @ts-ignore
     MainComponent = ({counter}) => (
         <div className="MainComponent">
+
+            <SearchComponent authToken={this.props.authToken} handleFoundFilesChanged={this.handleFoundFilesChanged}/>
+
             <form>
                 <label>
                     Choose a cluster to add/remove files from:
@@ -326,17 +333,17 @@ class SearchFiles extends React.Component<ReduxType, IState> {
             </Button>
             <div>
                 <h1> Your files </h1>
-                <input type="checkbox" onChange={this.handleAllChecked} value="checkedall"/> Check / Uncheck All
+                <input id={"checkAll"} type="checkbox" onChange={this.handleAllChecked} value="checkedall"/> Check / Uncheck All
                 <Table striped bordered hover variant="dark">
                     <thead>
                     <tr>
                         <th>#</th>
                         <th>Chosen</th>
-                        <th>File Name</th>
-                        <th>Cloud provider</th>
-                        <th>File owner</th>
-                        <th>Uploaded by</th>
-                        <th>File size (MBs)</th>
+                        <th>Name</th>
+                        <th>Cloud</th>
+                        <th>UploadedBy</th>
+                        <th>OwnedBy</th>
+                        <th>SizeOfFile_MB</th>
                         <th>Metadata</th>
                         <th>Delete</th>
                     </tr>

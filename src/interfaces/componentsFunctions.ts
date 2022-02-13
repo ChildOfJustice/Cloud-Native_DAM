@@ -35,7 +35,7 @@ export const  downloadFile = (fileKey:string, cloud:string, fileName:string) => 
         let promise = s3.getSignedUrlPromise('getObject', {
             Bucket: config.AWS.S3.bucketName,
             Key: fileKey,
-            ResponseContentDisposition: 'attachment; filename ="' + fileName + '"'
+            ResponseContentDisposition: 'attachment; filename ="' + encodeURIComponent(fileName) + '"'
         });
         promise.then((url) => {
             window.open( url, '_blank' );// + '?response-content-disposition=attachment;filename='+fileName

@@ -12,7 +12,7 @@ import UploadFile from "./private/UploadFile";
 import PersonalPage from "./private/PersonalPage";
 import ClusterOverview from "./private/ClusterOverview";
 import SharedWithMeClusters from "./private/SharedWithMeClusters";
-import SearchFiles from "./private/SearchFiles";
+import SearchFiles from "./private/Files/SearchFiles";
 // import Amplify, { Auth } from 'aws-amplify';
 //
 // Amplify.configure({

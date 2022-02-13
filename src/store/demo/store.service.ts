@@ -9,3 +9,6 @@ export function loadStore(dispatch: Dispatch<DemoActions>) {
 export function saveStore(dispatch: Dispatch<DemoActions>) {
     dispatch(actions.saveStore());
 }
+export function clearStore(dispatch: Dispatch<DemoActions>) {
+    dispatch(actions.clearStore());
+}

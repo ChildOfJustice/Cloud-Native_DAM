@@ -5,12 +5,13 @@
   "scripts": {
     "build": "rm -rf ./build/* && webpack --config webpack.config.js",
     "deploy": "sh ./utils/Deployment/fullDeploy.sh",
+    "remove": "sh ./utils/deleteResources.sh",
     "start-webpack": "webpack && webpack-dev-server --mode development",
     "serve": "serve -s build",
     "build-ts": "rm -rf ./build/* && react-scripts build",
-    "start": "react-scripts start",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start-react": "react-scripts start",
+    "test-react": "react-scripts test",
+    "eject-react": "react-scripts eject"
   },
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.9",
@@ -65,9 +66,11 @@
     "@types/react-router-bootstrap": "^0.24.5",
     "@types/react-router-dom": "^5.1.7",
     "@types/uuid": "^8.3.0",
+    "chromedriver": "^96.0.0",
     "copy-webpack-plugin": "^6.4.1",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "html-webpack-plugin": "^4.5.0",
+    "selenium-webdriver": "^4.1.0",
     "ts-loader": "^8.0.17",
     "typescript": "^4.2.3",
     "webpack-cli": "^3.1.0",

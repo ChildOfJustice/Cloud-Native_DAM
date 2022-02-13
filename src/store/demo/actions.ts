@@ -25,3 +25,6 @@ export function loadStore() {
 export function saveStore() {
     return action(Constants.SAVE_STORE, {});
 }
+export function clearStore() {
+    return action(Constants.CLEAR_STORE, {});
+}

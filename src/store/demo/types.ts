@@ -16,4 +16,5 @@ export enum Constants {
     SET_LOADING = 'SET_LOADING',
     LOAD_STORE = 'LOAD_STORE',
     SAVE_STORE = 'SAVE_STORE',
+    CLEAR_STORE = 'CLEAR_STORE'
 }
