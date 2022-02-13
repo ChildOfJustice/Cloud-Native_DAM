@@ -6,6 +6,7 @@ import {Col, Row} from "react-bootstrap";
 import {FetchParams, makeFetch} from "../../../interfaces/FetchInterface";
 import {FileMetadata} from "../../../interfaces/databaseTables";
 import {FileOverviewType} from "../../../interfaces/componentsTypes";
+// import {createFileFromOpenSearchResponse} from "../../../interfaces/componentsFunctions";
 
 interface IState {
     fileNameToSearch: string
@@ -46,11 +47,17 @@ export default class SearchComponent extends React.Component<IProps, IState> {
         //     }
         // }
 
-        let tagMetadataToDsl: { match: { [x: string]: string; } }[] = []
+        let tagMetadataToDsl: any[] = []
         this.state.metadataTags.forEach(tagInterface => {
             if (tagInterface.tagName != "") {
                 if (tagInterface.tagValue == "") {
-                    console.log("Tag value is empty - will check for files with specified field")
+                    console.log("Tag value is empty - will check for files with specified tag field")
+                    let queryWithTermCondition = {
+                        "exists": {
+                            "field": tagInterface.tagName
+                        }
+                    }
+                    tagMetadataToDsl.push(queryWithTermCondition)
                 } else {
                     let queryWithTermCondition = {
                         "match": {
@@ -126,8 +133,9 @@ export default class SearchComponent extends React.Component<IProps, IState> {
 
                 let foundFiles: FileMetadata[] = []
                 jsonResponse.forEach( (foundItem: any) => {
-
+                    //let file = createFileFromOpenSearchResponse(foundItem)
                     let file: FileMetadata = {
+                        id: foundItem._source.SK,
                         name: foundItem._source.Name,
                         S3uniqueName: foundItem._source.S3uniqueName,
                         cloud: foundItem._source.Cloud,
