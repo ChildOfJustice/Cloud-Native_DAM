@@ -399,6 +399,8 @@ Resources:
               - HEAD
             AllowedHeaders: 
               - "*"
+            ExposedHeaders:
+              - ETag
 
   #-----------------DynamoDB
   DynamoDBTable:
@@ -576,12 +578,28 @@ Resources:
       EnableDnsHostnames: true
 
   OpenSearchSecurityGroup:
-    #TODO: add inbound rules!!!
-    Type: 'AWS::EC2::SecurityGroup'
+    Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: VPC SG
       GroupDescription: VPC Security Group
       VpcId: !Ref OpenSearchVPC
+  OpenSearchSgIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref OpenSearchSecurityGroup
+      IpProtocol: tcp
+      FromPort: 0
+      ToPort: 65535
+      SourceSecurityGroupId: !GetAtt OpenSearchSecurityGroup.GroupId
+  OpenSearchSgEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref OpenSearchSecurityGroup
+      IpProtocol: tcp
+      FromPort: 0
+      ToPort: 65535
+      DestinationSecurityGroupId: !GetAtt OpenSearchSecurityGroup.GroupId
+
 
   OpenSearchLambdaSubnet1:
     Type: 'AWS::EC2::Subnet'
@@ -705,8 +723,7 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - es:ESHttpPost
-              - es:ESHttpPut
+              - es:*
               - ec2:DescribeNetworkInterfaces
               - ec2:CreateNetworkInterface
               - ec2:DeleteNetworkInterface
