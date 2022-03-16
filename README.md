@@ -1,5 +1,5 @@
 # Cloud-native Digital Asset Management System with automated deployment to AWS Cloud
-Web application for storing, sharing your files in the cloud with advanced search engine, metadata and persmissions management.
+Web application for storing, sharing your files in the cloud with advanced search engine, metadata and permissions management.
 
 ## How To Deploy
 
