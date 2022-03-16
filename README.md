@@ -31,7 +31,7 @@ Digital Asset Management systems can provide companies with the ability to store
 ## **Automated deployment process**
 ![](META/assets/readmeImages/AutomatedDeployment.png)
 
-###The automated deployment scenario:
+### The automated deployment scenario:
 
 All AWS resources are defined in the CloudFormation template and configured as code.
 The bash deployment script starts the CloudFormation stack creation.
